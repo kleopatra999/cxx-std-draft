@@ -33,6 +33,57 @@ Table~\ref{tab:containers.lib.summary}.
 \rSec1[container.requirements]{Container requirements}%
 \indextext{requirements!container}
 
+\rSec2[container.requirements.range]{Range requirements}
+
+\pnum
+Ranges are objects which refer to a sequence of other objects using a
+pair of iterators accessed by \tcode{begin()} and \tcode{end()}
+functions.  Ranges may or may not contain and own these objects.
+
+\pnum
+In Table~\ref{tab:containers.range.requirements}, \tcode{R} denotes a
+range class that refers to objects of type \tcode{T}.  \tcode{a}
+denotes an lvalue of type \tcode{R}.
+
+\begin{libreqtab2}
+{Range requirements}
+{tab:containers.range.requirements}
+\\ \topline
+\lhdr{Expression}       &   \rhdr{Return type}   \\ \capsep
+\endfirsthead
+\continuedcaption\\
+\hline
+\lhdr{Expression}       &   \rhdr{Return type}   \\ \capsep
+\endhead
+
+\tcode{using std::begin; begin(a)}  &
+input iterator type whose value type is \tcode{T}   \\ \rowsep
+
+\tcode{using std::end; end(a)}  &
+input iterator type whose value type is \tcode{T}  \\
+
+\end{libreqtab2}
+
+\pnum
+In a context where namespace \tcode{std} is an associated namespace,
+\tcode{begin(a)}
+returns an iterator referring to the first element in the range.
+\tcode{end(a)} returns an iterator which is the past-the-end value for the
+range.  A type is known as a \textit{range type}
+if \tcode{common_type<decltype(begin(a)), decltype(end(a))>::type} is an
+InputIterator type~(\ref{input.iterators}).  This type is known as
+the \textit{iterator type of the range \tcode{a}}.  The value type of this
+iterator is also the value type of the range.  \enternote These requirements are
+intended to match the requirements on \tcode{_RangeT} in the range-based for
+loop~(\ref{stmt.ranged}). \exitnote
+
+\pnum
+\tcode{a} is a valid range if and only if \range{begin(a)}{end(a)} is a valid
+range.
+
+\pnum
+A range \tcode{a} is \textit{empty} if and only if \tcode{begin(a) == end(a)}.
+
 \rSec2[container.requirements.general]{General container requirements}
 
 \pnum
@@ -730,6 +781,8 @@ denote iterators satisfying input iterator requirements
 and refer to elements implicitly convertible to \tcode{value_type},
 \tcode{[i, j)}
 denotes a valid range,
+\tcode{r} denotes a valid range~(\ref{container.requirements.range}) whose
+value type is implicitly convertible to \tcode{value_type}.
 \tcode{il} designates an object of type \tcode{initializer_list<value_type>},
 \tcode{n}
 denotes a value of \tcode{X::size_type},
@@ -785,12 +838,26 @@ The complexities of the expressions are sequence dependent.
                     &
   Equivalent to \tcode{X(il.begin(), il.end())} \\ \rowsep
 
+\tcode{X(r);}       &
+                    &
+  Equivalent to \tcode{X(begin(r), end(r))} \\ \rowsep
+
 \tcode{a = il;}     &
   \tcode{X\&}               &
   \requires\ \tcode{T} is
   \tcode{CopyInsertable} into \tcode{X}
   and \tcode{CopyAssignable}.
   Assigns the range \range{il.begin()}{il.end()} into \tcode{a}. All existing
+  elements of \tcode{a} are either assigned to or destroyed.\br
+  \returns\ \tcode{*this}.
+  \\ \rowsep
+
+\tcode{a = r;}     &
+  \tcode{X\&}               &
+  \requires\ \tcode{T} is
+  \tcode{CopyInsertable} into \tcode{X}
+  and \tcode{CopyAssignable}.
+  Assigns the range \range{begin(r)}{end(r)} into \tcode{a}. All existing
   elements of \tcode{a} are either assigned to or destroyed.\br
   \returns\ \tcode{*this}.
   \\ \rowsep
@@ -838,6 +905,10 @@ The complexities of the expressions are sequence dependent.
   \tcode{iterator}            &
   \tcode{a.insert(p, il.begin(), il.end())}.  \\ \rowsep
 
+\tcode{a.insert(p, r);}  &
+  \tcode{iterator}            &
+  \tcode{a.insert(p, begin(r), end(r))}.  \\ \rowsep
+
 \tcode{a.erase(q)}  &
  \tcode{iterator}   &
  \requires\ For \tcode{vector} and \tcode{deque},
@@ -870,6 +941,10 @@ The complexities of the expressions are sequence dependent.
 \tcode{a.assign(il)}    &
   \tcode{void}          &
   \tcode{a.assign(il.begin(), il.end())}. \\ \rowsep
+
+\tcode{a.assign(r)}    &
+  \tcode{void}          &
+  \tcode{a.assign(begin(r), end(r))}. \\ \rowsep
 
 \tcode{a.assign(n,t)}   &
  \tcode{void}           &
@@ -966,6 +1041,35 @@ rt fx3(const_iterator i1, const_iterator i2, InputIterator first, InputIterator 
 are called with a type \tcode{InputIterator} that does not qualify as an input
 iterator, then these functions
 shall not participate in overload resolution.
+
+\item If the constructor
+
+\begin{codeblock}
+template <class Range>
+X(Range&& range,
+  const allocator_type& alloc = allocator_type())
+\end{codeblock}
+
+or the member functions of the forms:
+
+\begin{codeblock}
+template <class Range>          // such as insert()
+rt fx1(const_iterator p, Range&& range);
+
+template <class Range>          // such as append(), assign()
+rt fx2(Range&& range);
+
+template <class Range>          // such as replace()
+rt fx3(const_iterator i1, const_iterator i2, Range&& range);
+\end{codeblock}
+
+are called with a type \tcode{Range} that does not qualify as a
+range~(\ref{container.requirements.range}), or the value type of this range is
+not convertible to \tcode{value_type}, then these functions and constructor
+shall not participate in overload resolution.  Further, if the range is passed
+as an rvalue, it is left in an unspecified state after the call.\footnote{This
+allows implementations to detect arguments that are containers and move, instead
+of copying, their contents.}
 \end{itemize}
 
 \pnum
@@ -1242,6 +1346,8 @@ denotes a valid range,
 \tcode{p} denotes a valid const iterator to \tcode{a},
 \tcode{q} denotes a valid dereferenceable const iterator to \tcode{a},
 \tcode{[q1, q2)} denotes a valid range of const iterators in \tcode{a},
+\tcode{r} denotes a valid range~(\ref{container.requirements.range}) whose
+value type is implicitly convertible to \tcode{value_type}.
 \tcode{il} designates an object of type \tcode{initializer_list<value_type>},
 \tcode{t} denotes a value of \tcode{X::value_type},
 \tcode{k} denotes a value of \tcode{X::key_type}
@@ -1330,6 +1436,11 @@ and \tcode{c} denotes a value of type \tcode{X::key_compare}.
   Same as \tcode{X(il.begin(), il.end())}.  &
   same as \tcode{X(il.begin(), il.end())}.  \\ \rowsep
 
+\tcode{X(r);}            &
+                          &
+  Same as \tcode{X(begin(r), end(r))}.  &
+  same as \tcode{X(begin(r), end(r))}.  \\ \rowsep
+
 \tcode{a = il}     &
   \tcode{X\&}               &
   \requires\ \tcode{value_type} is
@@ -1339,6 +1450,17 @@ and \tcode{c} denotes a value of type \tcode{X::key_compare}.
   existing elements of \tcode{a} are either assigned to or destroyed. &
   $N log N$ in general (where $N$ has the value \tcode{il.size() + a.size()});
   linear if \range{il.begin()}{il.end()} is sorted with \tcode{value_comp()}.
+  \\ \rowsep
+
+\tcode{a = r}     &
+  \tcode{X\&}               &
+  \requires\ \tcode{value_type} is
+  \tcode{CopyInsertable} into \tcode{X}
+  and \tcode{CopyAssignable}.\br
+  \effects Assigns the range \range{begin(r)}{end(r)} into \tcode{a}. All
+  existing elements of \tcode{a} are either assigned to or destroyed. &
+  $N log N$ in general (where $N$ has the value \tcode{distance(begin(r), end(r)) + a.size()});
+  linear if \range{begin(r)}{end(r)} is sorted with \tcode{value_comp()}.
   \\ \rowsep
 
 \tcode{a.key_comp()}       &
@@ -1438,6 +1560,11 @@ and \tcode{c} denotes a value of type \tcode{X::key_compare}.
   Equivalent to \tcode{a.insert(il.begin(), il.end())}. &
                                           \\ \rowsep
 
+\tcode{a.insert(r)}           &
+  \tcode{void}                  &
+  Equivalent to \tcode{a.insert(begin(r), end(r))}. &
+                                          \\ \rowsep
+
 \tcode{a.erase(k)}              &
  \tcode{size_type}             &
  erases all elements in the container with key equivalent to
@@ -1494,6 +1621,31 @@ and \tcode{c} denotes a value of type \tcode{X::key_compare}.
  equivalent to \tcode{make_pair(a.lower_bound(k), a.upper_bound(k))}.    &
  logarithmic                    \\
 \end{libreqtab4b}
+
+\pnum
+For every associative container defined in this Clause, if the constructor
+
+\begin{codeblock}
+template <class Range>
+X(Range&& range,
+  const Compare& = Compare(),
+  const Allocator& alloc = Allocator())
+\end{codeblock}
+
+or the member functions of the forms:
+
+\begin{codeblock}
+template <class Range>          // such as insert(), operator=()
+rt fx2(Range&& range);
+\end{codeblock}
+
+are called with a type \tcode{Range} that does not qualify as a
+range~(\ref{container.requirements.range}), or the value type of this range is
+not convertible to \tcode{value_type}, then these functions and constructor
+shall not participate in overload resolution.  Further, if the range is passed
+as an rvalue, it is left in an unspecified state after the call.\footnote{This
+allows implementations to detect arguments that are containers and move, instead
+of copying, their contents.}
 
 \pnum
 The \tcode{insert} and \tcode{emplace} members shall not affect the validity of
@@ -1689,6 +1841,8 @@ to \tcode{value_type}, \tcode{[i, j)} is a valid range,
 \tcode{p} and \tcode{q2} are valid const iterators to \tcode{a},
 \tcode{q} and \tcode{q1} are valid dereferenceable const iterators to \tcode{a},
 \tcode{[q1, q2)} is a valid range in \tcode{a},
+\tcode{r} denotes a valid range~(\ref{container.requirements.range}) whose
+value type is implicitly convertible to \tcode{value_type}.
 \tcode{il} designates an object of type \tcode{initializer_list<value_type>},
 \tcode{t} is a value of
 type \tcode{X::value_type}, \tcode{k} is a value of
@@ -1865,6 +2019,12 @@ from \tcode{[i, j)} into it.
 &   Same as \tcode{X(il.begin(),} \tcode{il.end())}.
 \\ \rowsep
 %
+\tcode{X(r)}
+&   \tcode{X}
+&   Same as \tcode{X(begin(r), end(r))}.
+&   Same as \tcode{X(begin(r),} \tcode{end(r))}.
+\\ \rowsep
+%
 \tcode{X(b)}\br \tcode{X a(b)}
 &   \tcode{X}
 &   Copy constructor.  In addition to the requirements
@@ -1889,6 +2049,16 @@ and \tcode{CopyAssignable}.\br
     \effects\ Assigns the range \range{il.begin()}{il.end()} into \tcode{a}. All
     existing elements of \tcode{a} are either assigned to or destroyed.
 &   Same as \tcode{a = X(il).}
+\\ \rowsep
+%
+\tcode{a = r}
+&   \tcode{X\&}
+&   \requires\ \tcode{value_type} is
+CopyInsertable into \tcode{X}
+and \tcode{CopyAssignable}.\br
+    \effects\ Assigns the range \range{begin(r)}{end(r)} into \tcode{a}. All
+    existing elements of \tcode{a} are either assigned to or destroyed.
+&   Same as \tcode{a = X(r).}
 \\ \rowsep
 %
 \tcode{b.hash_function()}
@@ -1997,6 +2167,12 @@ start.  Implementations are permitted to ignore the hint.%
 &   \tcode{void}
 &   Same as \tcode{a.insert(il.begin(), il.end())}.
 &   Same as \tcode{a.insert(} \tcode{il.begin(),} \tcode{il.end())}.
+\\ \rowsep
+%
+\tcode{a.insert(r)}
+&   \tcode{void}
+&   Same as \tcode{a.insert(begin(r), end(r))}.
+&   Same as \tcode{a.insert(} \tcode{begin(r),} \tcode{end(r))}.
 \\ \rowsep
 %
 \tcode{a.erase(k)}
@@ -2185,6 +2361,35 @@ the number of elements erased.
   Average case linear in \tcode{a.size()}, worst case quadratic. \\
 
 \end{libreqtab4d}
+
+\pnum
+For every unordered associative container defined in this Clause, if the
+constructor
+
+\begin{codeblock}
+template <class Range>
+X(Range&& range,
+  size_type = @\seebelow@,
+  const hasher& hf = hasher(),
+  const key_equal& eql = key_equal(),
+  const allocator_type& a = allocator_type())
+\end{codeblock}
+
+or the member functions of the forms:
+
+\begin{codeblock}
+template <class Range>          // such as insert(), operator=()
+rt fx2(Range&& range);
+\end{codeblock}
+
+are called with a type \tcode{Range} that does not qualify as a
+range~(\ref{container.requirements.range}), or the value type of this range is
+not convertible to \tcode{value_type}, then these functions and constructor
+shall not participate in overload resolution.  Further, if the range is passed
+as an rvalue, it is left in an unspecified state after the call.\footnote{This
+allows implementations to detect arguments that are containers and move, instead
+of copying, their contents.}
+
 \pnum
 Two unordered containers \tcode{a} and \tcode{b} compare equal if
 \tcode{a.size() == b.size()} and, for every equivalent-key group
@@ -2771,15 +2976,21 @@ namespace std {
     deque(const deque&, const Allocator&);
     deque(deque&&, const Allocator&);
     deque(initializer_list<T>, const Allocator& = Allocator());
+    template <class Range>
+      deque(Range&&, const Allocator& = Allocator());
 
     ~deque();
     deque& operator=(const deque& x);
     deque& operator=(deque&& x);
     deque& operator=(initializer_list<T>);
+    template <class Range>
+      deque& operator=(Range&&);
     template <class InputIterator>
       void assign(InputIterator first, InputIterator last);
     void assign(size_type n, const T& t);
     void assign(initializer_list<T>);
+    template <class Range>
+      void assign(Range&&);
     allocator_type get_allocator() const noexcept;
 
     // iterators:
@@ -2831,6 +3042,8 @@ namespace std {
     template <class InputIterator>
       iterator insert (const_iterator position, InputIterator first, InputIterator last);
     iterator insert(const_iterator position, initializer_list<T>);
+    template <class Range>
+      iterator insert(const_iterator position, Range&&);
 
     void pop_front();
     void pop_back();
@@ -3040,6 +3253,8 @@ template <class InputIterator>
   iterator insert(const_iterator position,
                   InputIterator first, InputIterator last);
 iterator insert(const_iterator position, initializer_list<T>);
+template <class Range>
+  iterator insert(const_iterator position, Range&&);
 
 template <class... Args> void emplace_front(Args&&... args);
 template <class... Args> void emplace_back(Args&&... args);
@@ -3185,14 +3400,20 @@ namespace std {
     forward_list(const forward_list& x, const Allocator&);
     forward_list(forward_list&& x, const Allocator&);
     forward_list(initializer_list<T>, const Allocator& = Allocator());
+    template <class Range>
+      forward_list(Range&&, const Allocator& = Allocator());
     ~forward_list();
     forward_list& operator=(const forward_list& x);
     forward_list& operator=(forward_list&& x);
     forward_list& operator=(initializer_list<T>);
+    template <class Range>
+      forward_list& operator=(Range&&);
     template <class InputIterator>
       void assign(InputIterator first, InputIterator last);
     void assign(size_type n, const T& t);
     void assign(initializer_list<T>);
+    template <class Range>
+      void assign(Range&&);
     allocator_type get_allocator() const noexcept;
 
     // \ref{forwardlist.iter}, iterators:
@@ -3229,6 +3450,8 @@ namespace std {
     template <class InputIterator>
       iterator insert_after(const_iterator position, InputIterator first, InputIterator last);
     iterator insert_after(const_iterator position, initializer_list<T> il);
+    template <class Range>
+      iterator insert_after(const_iterator position, Range&& range);
 
     iterator erase_after(const_iterator position);
     iterator erase_after(const_iterator position, const_iterator last);
@@ -3534,6 +3757,29 @@ iterator insert_after(const_iterator position, initializer_list<T> il);
 \pnum
 \returns
 An iterator pointing to the last inserted element or \tcode{position} if \tcode{i1} is empty.
+\end{itemdescr}
+
+
+\indexlibrary{\idxcode{insert_after}!\idxcode{forward_list}}%
+\indexlibrary{\idxcode{forward_list}!\idxcode{insert_after}}%
+\begin{itemdecl}
+template <class Range>
+  iterator insert_after(const_iterator position, Range&& range);
+\end{itemdecl}
+
+\begin{itemdescr}
+\pnum
+\remarks This signature shall not participate in overload resolution unless
+\tcode{Range} is a range type whose value type is implicitly convertible to
+\tcode{value_type}.  If the range is passed as an rvalue, it is left in an
+unspecified state after the call.
+
+\pnum
+\effects \tcode{insert_after(p, begin(range), end(range))}.
+
+\pnum
+\returns
+An iterator pointing to the last inserted element or \tcode{position} if \tcode{range} is empty.
 \end{itemdescr}
 
 
@@ -3927,14 +4173,20 @@ namespace std {
     list(const list&, const Allocator&);
     list(list&&, const Allocator&);
     list(initializer_list<T>, const Allocator& = Allocator());
+    template <class Range>
+      list(Range&&, const Allocator& = Allocator());
    ~list();
     list& operator=(const list& x);
     list& operator=(list&& x);
     list& operator=(initializer_list<T>);
+    template <class Range>
+      list& operator=(Range&&);
     template <class InputIterator>
       void assign(InputIterator first, InputIterator last);
     void assign(size_type n, const T& t);
     void assign(initializer_list<T>);
+    template <class Range>
+      void assign(Range&&);
     allocator_type get_allocator() const noexcept;
 
     // iterators:
@@ -3983,6 +4235,8 @@ namespace std {
       iterator insert(const_iterator position, InputIterator first,
                       InputIterator last);
     iterator insert(const_iterator position, initializer_list<T> il);
+    template <class Range>
+      iterator insert(const_iterator position, Range&& range);
 
     iterator erase(const_iterator position);
     iterator erase(const_iterator position, const_iterator last);
@@ -4211,6 +4465,8 @@ template <class InputIterator>
   iterator insert(const_iterator position, InputIterator first,
                   InputIterator last);
 iterator insert(const_iterator position, initializer_list<T>);
+template <class Range>
+  iterator insert(const_iterator position, Range&&);
 
 template <class... Args> void emplace_front(Args&&... args);
 template <class... Args> void emplace_back(Args&&... args);
@@ -4654,14 +4910,20 @@ namespace std {
     vector(const vector&, const Allocator&);
     vector(vector&&, const Allocator&);
     vector(initializer_list<T>, const Allocator& = Allocator());
+    template <class Range>
+      vector(Range&&, const Allocator& = Allocator());
    ~vector();
     vector& operator=(const vector& x);
     vector& operator=(vector&& x);
     vector& operator=(initializer_list<T>);
+    template <class Range>
+      vector& operator=(Range&&);
     template <class InputIterator>
       void assign(InputIterator first, InputIterator last);
     void assign(size_type n, const T& u);
     void assign(initializer_list<T>);
+    template <class Range>
+      void assign(Range&&);
     allocator_type get_allocator() const noexcept;
 
     // iterators:
@@ -4717,6 +4979,8 @@ namespace std {
         iterator insert(const_iterator position,
                         InputIterator first, InputIterator last);
     iterator     insert(const_iterator position, initializer_list<T> il);
+    template <class Range>
+      iterator   insert(const_iterator position, Range&& range);
     iterator erase(const_iterator position);
     iterator erase(const_iterator first, const_iterator last);
     void     swap(vector&);
@@ -5030,6 +5294,8 @@ iterator insert(const_iterator position, size_type n, const T& x);
 template <class InputIterator>
   iterator insert(const_iterator position, InputIterator first, InputIterator last);
 iterator insert(const_iterator position, initializer_list<T>);
+template <class Range>
+  iterator insert(const_iterator position, Range&&);
 
 template <class... Args> void emplace_back(Args&&... args);
 template <class... Args> iterator emplace(const_iterator position, Args&&... args);
@@ -5148,14 +5414,20 @@ namespace std {
     vector(const vector&, const Allocator&);
     vector(vector&&, const Allocator&);
     vector(initializer_list<bool>, const Allocator& = Allocator()));
+    template <class Range>
+      vector(Range&&, const Allocator& = Allocator()));
    ~vector();
     vector<bool,Allocator>& operator=(const vector<bool,Allocator>& x);
     vector<bool,Allocator>& operator=(vector<bool,Allocator>&& x);
     vector operator=(initializer_list<bool>);
+    template <class Range>
+      vector operator=(Range&&);
     template <class InputIterator>
       void assign(InputIterator first, InputIterator last);
     void assign(size_type n, const bool& t);
-    void assign(initializer_list<bool>;
+    void assign(initializer_list<bool>);
+    template <class Range>
+      void assign(Range&&);
     allocator_type get_allocator() const noexcept;
 
     // iterators:
@@ -5201,6 +5473,8 @@ namespace std {
         iterator insert(const_iterator position,
                         InputIterator first, InputIterator last);
     iterator insert(const_iterator position, initializer_list<bool> il);
+    template <class Range>
+        iterator insert(const_iterator position, Range&& range);
 
     iterator erase(const_iterator position);
     iterator erase(const_iterator first, const_iterator last);
@@ -5494,12 +5768,18 @@ namespace std {
     map(initializer_list<value_type>,
       const Compare& = Compare(),
       const Allocator& = Allocator());
+    template <class Range>
+      map(Range&&,
+        const Compare& = Compare(),
+        const Allocator& = Allocator());
    ~map();
     map<Key,T,Compare,Allocator>&
       operator=(const map<Key,T,Compare,Allocator>& x);
     map<Key,T,Compare,Allocator>&
       operator=(map<Key,T,Compare,Allocator>&& x);
     map& operator=(initializer_list<value_type>);
+    template <class Range>
+      map& operator=(Range&&);
     allocator_type get_allocator() const noexcept;
 
     // iterators:
@@ -5540,6 +5820,8 @@ namespace std {
     template <class InputIterator>
       void insert(InputIterator first, InputIterator last);
     void insert(initializer_list<value_type>);
+    template <class Range>
+      void insert(Range&&);
 
     iterator  erase(const_iterator position);
     size_type erase(const key_type& x);
@@ -5921,12 +6203,18 @@ namespace std {
     multimap(initializer_list<value_type>,
       const Compare& = Compare(),
       const Allocator& = Allocator());
+    template <class Range>
+      multimap(Range&&,
+        const Compare& = Compare(),
+        const Allocator& = Allocator());
    ~multimap();
     multimap<Key,T,Compare,Allocator>&
       operator=(const multimap<Key,T,Compare,Allocator>& x);
     multimap<Key,T,Compare,Allocator>&
       operator=(multimap<Key,T,Compare,Allocator>&& x);
     multimap& operator=(initializer_list<value_type>);
+    template <class Range>
+      multimap& operator=(Range&&);
     allocator_type get_allocator() const noexcept;
 
     // iterators:
@@ -5960,6 +6248,7 @@ namespace std {
     template <class InputIterator>
       void insert(InputIterator first, InputIterator last);
     void insert(initializer_list<value_type>);
+    template <class Range> void insert(Range&&);
 
     iterator  erase(const_iterator position);
     size_type erase(const key_type& x);
@@ -6236,12 +6525,18 @@ namespace std {
     set(initializer_list<value_type>,
       const Compare& = Compare(),
       const Allocator& = Allocator());
+    template <class Range>
+      set(Range&&,
+        const Compare& = Compare(),
+        const Allocator& = Allocator());
    ~set();
     set<Key,Compare,Allocator>& operator=
       (const set<Key,Compare,Allocator>& x);
     set<Key,Compare,Allocator>& operator=
       (set<Key,Compare,Allocator>&& x);
     set& operator=(initializer_list<value_type>);
+    template <class Range>
+      set& operator=(Range&&);
     allocator_type get_allocator() const noexcept;
 
     // iterators:
@@ -6275,6 +6570,8 @@ namespace std {
     template <class InputIterator>
       void insert(InputIterator first, InputIterator last);
     void insert(initializer_list<value_type>);
+    template <class Range>
+      void insert(Range&&);
 
     iterator  erase(const_iterator position);
     size_type erase(const key_type& x);
@@ -6480,12 +6777,18 @@ namespace std {
     multiset(initializer_list<value_type>,
       const Compare& = Compare(),
       const Allocator& = Allocator());
+    template <class Range>
+      multiset(Range&&,
+        const Compare& = Compare(),
+        const Allocator& = Allocator());
    ~multiset();
     multiset<Key,Compare,Allocator>&
         operator=(const multiset<Key,Compare,Allocator>& x);
     multiset<Key,Compare,Allocator>&
         operator=(multiset<Key,Compare,Allocator>&& x);
     multiset& operator=(initializer_list<value_type>);
+    template <class Range>
+      multiset& operator=(Range&&);
     allocator_type get_allocator() const noexcept;
 
     // iterators:
@@ -6519,6 +6822,8 @@ namespace std {
     template <class InputIterator>
       void insert(InputIterator first, InputIterator last);
     void insert(initializer_list<value_type>);
+    template <class Range>
+      void insert(Range&&);
 
     iterator  erase(const_iterator position);
     size_type erase(const key_type& x);
@@ -6821,10 +7126,18 @@ namespace std {
       const hasher& hf = hasher(),
       const key_equal& eql = key_equal(),
       const allocator_type& a = allocator_type());
+    template <class Range>
+      unordered_map(Range&&,
+        size_type = @\seebelow@,
+        const hasher& hf = hasher(),
+        const key_equal& eql = key_equal(),
+        const allocator_type& a = allocator_type());
     ~unordered_map();
     unordered_map& operator=(const unordered_map&);
     unordered_map& operator=(unordered_map&&);
     unordered_map& operator=(initializer_list<value_type>);
+    template <class Range>
+      unordered_map& operator=(Range&&);
     allocator_type get_allocator() const noexcept;
 
     // size and capacity
@@ -6849,6 +7162,7 @@ namespace std {
     template <class P> iterator insert(const_iterator hint, P&& obj);
     template <class InputIterator> void insert(InputIterator first, InputIterator last);
     void insert(initializer_list<value_type>);
+    template <class Range> void insert(Range&&);
 
     iterator erase(const_iterator position);
     size_type erase(const key_type& k);
@@ -7154,10 +7468,18 @@ namespace std {
       const hasher& hf = hasher(),
       const key_equal& eql = key_equal(),
       const allocator_type& a = allocator_type());
+    template <class Range>
+      unordered_multimap(Range&&,
+        size_type = @\seebelow@,
+        const hasher& hf = hasher(),
+        const key_equal& eql = key_equal(),
+        const allocator_type& a = allocator_type());
     ~unordered_multimap();
     unordered_multimap& operator=(const unordered_multimap&);
     unordered_multimap& operator=(unordered_multimap&&);
     unordered_multimap& operator=(initializer_list<value_type>);
+    template <class Range>
+      unordered_multimap& operator=(Range&&);
     allocator_type get_allocator() const noexcept;
 
     // size and capacity
@@ -7182,6 +7504,7 @@ namespace std {
     template <class P> iterator insert(const_iterator hint, P&& obj);
     template <class InputIterator> void insert(InputIterator first, InputIterator last);
     void insert(initializer_list<value_type>);
+    template <class Range> void insert(Range&&);
 
     iterator erase(const_iterator position);
     size_type erase(const key_type& k);
@@ -7423,10 +7746,18 @@ namespace std {
       const hasher& hf = hasher(),
       const key_equal& eql = key_equal(),
       const allocator_type& a = allocator_type());
+    template <class Range>
+      unordered_set(Range&&,
+        size_type = @\seebelow@,
+        const hasher& hf = hasher(),
+        const key_equal& eql = key_equal(),
+        const allocator_type& a = allocator_type());
     ~unordered_set();
     unordered_set& operator=(const unordered_set&);
     unordered_set& operator=(unordered_set&&);
     unordered_set& operator=(initializer_list<value_type>);
+    template <class Range>
+      unordered_set& operator=(Range&&);
     allocator_type get_allocator() const noexcept;
 
     // size and capacity
@@ -7451,6 +7782,7 @@ namespace std {
     iterator insert(const_iterator hint, value_type&& obj);
     template <class InputIterator> void insert(InputIterator first, InputIterator last);
     void insert(initializer_list<value_type>);
+    template <class Range> void insert(Range&&);
 
     iterator erase(const_iterator position);
     size_type erase(const key_type& k);
@@ -7642,10 +7974,18 @@ namespace std {
       const hasher& hf = hasher(),
       const key_equal& eql = key_equal(),
       const allocator_type& a = allocator_type());
+    template <class Range>
+      unordered_multiset(Range&&,
+        size_type = @\seebelow@,
+        const hasher& hf = hasher(),
+        const key_equal& eql = key_equal(),
+        const allocator_type& a = allocator_type());
     ~unordered_multiset();
     unordered_multiset& operator=(const unordered_multiset&);
     unordered_multiset operator=(unordered_multiset&&);
     unordered_multiset& operator=(initializer_list<value_type>);
+    template <class Range>
+      unordered_multiset& operator=(Range&&);
     allocator_type get_allocator() const noexcept;
 
     // size and capacity
@@ -7670,6 +8010,7 @@ namespace std {
     iterator insert(const_iterator hint, value_type&& obj);
     template <class InputIterator> void insert(InputIterator first, InputIterator last);
     void insert(initializer_list<value_type>);
+    template <class Range> void insert(Range&&);
 
     iterator erase(const_iterator position);
     size_type erase(const key_type& k);
