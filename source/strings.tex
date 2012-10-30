@@ -328,9 +328,11 @@ namespace std {
     static constexpr bool eq(char_type c1, char_type c2) noexcept;
     static constexpr bool lt(char_type c1, char_type c2) noexcept;
 
-    static int compare(const char_type* s1, const char_type* s2, size_t n);
-    static size_t length(const char_type* s);
-    static const char_type* find(const char_type* s, size_t n,
+    static constexpr int compare(const char_type* s1, const char_type* s2, size_t n);
+    static constexpr size_t length(const char_type* s);
+    static constexpr@\footnote{
+        Implementing these functions efficiently at both compile and runtime requires implementation-specific magic that's not specified in this standard.
+    }@ const char_type* find(const char_type* s, size_t n,
                  const char_type& a);
     static char_type* move(char_type* s1, const char_type* s2, size_t n);
     static char_type* copy(char_type* s1, const char_type* s2, size_t n);
@@ -412,10 +414,10 @@ namespace std {
     static constexpr bool eq(char_type c1, char_type c2) noexcept;
     static constexpr bool lt(char_type c1, char_type c2) noexcept;
 
-    static int compare(const char_type* s1, const char_type* s2, size_t n);
-    static size_t length(const char_type* s);
-    static const char_type* find(const char_type* s, size_t n,
-                                 const char_type& a);
+    static constexpr int compare(const char_type* s1, const char_type* s2, size_t n);
+    static constexpr size_t length(const char_type* s);
+    static constexpr const char_type* find(const char_type* s, size_t n,
+                                           const char_type& a);
     static char_type* move(char_type* s1, const char_type* s2, size_t n);
     static char_type* copy(char_type* s1, const char_type* s2, size_t n);
     static char_type* assign(char_type* s, size_t n, char_type a);
@@ -462,9 +464,9 @@ namespace std {
     static constexpr bool eq(char_type c1, char_type c2) noexcept;
     static constexpr bool lt(char_type c1, char_type c2) noexcept;
 
-    static int compare(const char_type* s1, const char_type* s2, size_t n);
-    static size_t length(const char_type* s);
-    static const char_type* find(const char_type* s, size_t n,
+    static constexpr int compare(const char_type* s1, const char_type* s2, size_t n);
+    static constexpr size_t length(const char_type* s);
+    static constexpr const char_type* find(const char_type* s, size_t n,
                  const char_type& a);
     static char_type* move(char_type* s1, const char_type* s2, size_t n);
     static char_type* copy(char_type* s1, const char_type* s2, size_t n);
@@ -512,9 +514,9 @@ namespace std {
     static constexpr bool eq(char_type c1, char_type c2) noexcept;
     static constexpr bool lt(char_type c1, char_type c2) noexcept;
 
-    static int compare(const char_type* s1, const char_type* s2, size_t n);
-    static size_t length(const char_type* s);
-    static const char_type* find(const char_type* s, size_t n,
+    static constexpr int compare(const char_type* s1, const char_type* s2, size_t n);
+    static constexpr size_t length(const char_type* s);
+    static constexpr const char_type* find(const char_type* s, size_t n,
                  const char_type& a);
     static char_type* move(char_type* s1, const char_type* s2, size_t n);
     static char_type* copy(char_type* s1, const char_type* s2, size_t n);
@@ -593,6 +595,17 @@ the specializations
 and
 \tcode{basic_string<\brk{}wchar_t>}, respectively.
 
+\pnum
+\tcode{<string>} also defines the \tcode{basic_string_ref} class template for
+referring to constant sequences of char-like objects and four
+typedefs, \tcode{string_ref}, \tcode{u16string_ref}, \tcode{u32string_ref},
+and \tcode{wstring_ref}, that name the
+specializations \tcode{basic_string_ref<char>},
+\tcode{basic_string_ref<char16_t>},
+\tcode{basic_string_ref<char32_t>},
+and
+\tcode{basic_string_ref<wchar_t>}, respectively.
+
 \synopsis{Header \tcode{<string>} synopsis}
 
 \indexlibrary{\idxhdr{string}}%
@@ -607,6 +620,25 @@ namespace std {
   template <> struct char_traits<char16_t>;
   template <> struct char_traits<char32_t>;
   template <> struct char_traits<wchar_t>;
+
+  // \ref{basic.string.ref}, basic_string_ref:
+  template<class charT, class traits = char_traits<charT>>
+      class basic_string_ref;
+
+  template<typename charT, typename traits>
+  bool operator==(basic_string_ref<charT, traits> x, basic_string_ref<charT, traits> y);
+  template<typename charT, typename traits>
+  bool operator!=(basic_string_ref<charT, traits> x, basic_string_ref<charT, traits> y);
+  template<typename charT, typename traits>
+  bool operator< (basic_string_ref<charT, traits> x, basic_string_ref<charT, traits> y);
+  template<typename charT, typename traits>
+  bool operator> (basic_string_ref<charT, traits> x, basic_string_ref<charT, traits> y);
+  template<typename charT, typename traits>
+  bool operator<=(basic_string_ref<charT, traits> x, basic_string_ref<charT, traits> y);
+  template<typename charT, typename traits>
+  bool operator>=(basic_string_ref<charT, traits> x, basic_string_ref<charT, traits> y);
+  // Sufficient additional overloads to allow mixed comparisons with any type
+  // that has an implicit conversion to basic_string_ref<charT, traits>.
 
   // \ref{basic.string}, basic_string:
   template<class charT, class traits = char_traits<charT>,
@@ -729,6 +761,10 @@ namespace std {
     basic_ostream<charT, traits>&
       operator<<(basic_ostream<charT, traits>& os,
                  const basic_string<charT,traits,Allocator>& str);
+  template<class charT, class traits>
+    basic_ostream<charT, traits>&
+      operator<<(basic_ostream<charT, traits>& os,
+                 basic_string_ref<charT,traits> str);
   template<class charT, class traits, class Allocator>
     basic_istream<charT,traits>&
       getline(basic_istream<charT,traits>& is,
@@ -747,6 +783,12 @@ namespace std {
     basic_istream<charT,traits>&
       getline(basic_istream<charT,traits>&& is,
               basic_string<charT,traits,Allocator>& str);
+
+  // \tcode{basic_string_ref} typedef names
+  typedef basic_string_ref<char> string_ref;
+  typedef basic_string_ref<char16_t> u16string_ref;
+  typedef basic_string_ref<char32_t> u32string_ref;
+  typedef basic_string_ref<wchar_t> wstring_ref;
 
   // \tcode{basic_string} typedef names
   typedef basic_string<char> string;
@@ -755,14 +797,25 @@ namespace std {
   typedef basic_string<wchar_t> wstring;
 
   // \ref{string.conversions}, numeric conversions:
+  // \ednote{If we remove the \tcode{string} overloads, it could break code that relies on an implicit conversion to string.  If we leave the \tcode{string} overloads, we need to also add \tcode{const char*} overloads since that conversion will now be ambiguous.}
+  // \ednote{We'd like to add \tcode{optional<T> stox_consume(string_ref\&, int base=10)} if/when \tcode{optional} becomes available.}
   int stoi(const string& str, size_t *idx = 0, int base = 10);
+  int stoi(string_ref str, size_t* idx = 0, int base = 10);
   long stol(const string& str, size_t *idx = 0, int base = 10);
+  long stol(string_ref str, size_t* idx = 0, int base = 10);
   unsigned long stoul(const string& str, size_t *idx = 0, int base = 10);
+  unsigned long stoul(string_ref str, size_t* idx = 0, int base = 10);
   long long stoll(const string& str, size_t *idx = 0, int base = 10);
+  long long stoll(string_ref str, size_t* idx = 0, int base = 10);
   unsigned long long stoull(const string& str, size_t *idx = 0, int base = 10);
+  unsigned long long stoull(string_ref str, size_t* idx = 0, int base = 10);
   float stof(const string& str, size_t *idx = 0);
+  float stof(string_ref str, size_t* idx = 0);
   double stod(const string& str, size_t *idx = 0);
+  double stod(string_ref str, size_t* idx = 0);
   long double stold(const string& str, size_t *idx = 0);
+  long double stold(string_ref str, size_t* idx = 0);
+
   string to_string(int val);
   string to_string(unsigned val);
   string to_string(long val);
@@ -774,13 +827,22 @@ namespace std {
   string to_string(long double val);
 
   int stoi(const wstring& str, size_t *idx = 0, int base = 10);
+  int stoi(wstring_ref str, size_t* idx = 0, int base = 10);
   long stol(const wstring& str, size_t *idx = 0, int base = 10);
+  long stol(wstring_ref str, size_t* idx = 0, int base = 10);
   unsigned long stoul(const wstring& str, size_t *idx = 0, int base = 10);
+  unsigned long stoul(wstring_ref str, size_t* idx = 0, int base = 10);
   long long stoll(const wstring& str, size_t *idx = 0, int base = 10);
+  long long stoll(wstring_ref str, size_t* idx = 0, int base = 10);
   unsigned long long stoull(const wstring& str, size_t *idx = 0, int base = 10);
+  unsigned long long stoull(wstring_ref str, size_t* idx = 0, int base = 10);
   float stof(const wstring& str, size_t *idx = 0);
+  float stof(wstring_ref str, size_t* idx = 0);
   double stod(const wstring& str, size_t *idx = 0);
+  double stod(wstring_ref str, size_t* idx = 0);
   long double stold(const wstring& str, size_t *idx = 0);
+  long double stold(wstring_ref str, size_t* idx = 0);
+
   wstring to_wstring(int val);
   wstring to_wstring(unsigned val);
   wstring to_wstring(long val);
@@ -793,12 +855,888 @@ namespace std {
 
   // \ref{basic.string.hash}, hash support:
   template <class T> struct hash;
+  template <> struct hash<string_ref>;
+  template <> struct hash<u16string_ref>;
+  template <> struct hash<u32string_ref>;
+  template <> struct hash<wstring_ref>;
   template <> struct hash<string>;
   template <> struct hash<u16string>;
   template <> struct hash<u32string>;
   template <> struct hash<wstring>;
 }
 \end{codeblock}
+
+\rSec1[basic.string.ref]{Class template \tcode{basic_string_ref}}
+
+\pnum
+\indexlibrary{\idxcode{basic_string_ref}}%
+The class template \tcode{basic_string_ref} describes objects that can refer to
+a constant sequence of arbitrary char-like objects with the first element of the
+sequence at position zero.  In the rest of this Clause, the type of the
+char-like objects held in a \tcode{basic_string_ref} object is designated
+by \tcode{charT}.
+
+\pnum
+\enternote The library provides implicit conversions from \tcode{const charT*}
+and \tcode{std::basic_string<charT, ...>} to \tcode{std::basic_string_ref<charT,
+...>} so that user code can accept just \tcode{std::basic_string_ref<charT>} as
+a parameter wherever a sequence of characters is expected.  User-defined types
+should define their own implicit conversions to \tcode{std::basic_string_ref} in
+order to interoperate with these functions. \exitnote
+
+\pnum
+The complexity of member functions is \bigoh{1} unless otherwise specified.
+
+\begin{codeblock}
+namespace std {
+  template<typename charT, typename traits = char_traits<charT>>
+  class basic_string_ref {
+    public:
+    // types
+    typedef charT value_type;
+    typedef const charT* pointer;
+    typedef const charT& reference;
+    typedef const charT& const_reference;
+    typedef @\impdef@ const_iterator; // See \ref{string.ref.iterators}
+    typedef const_iterator iterator;@\footnote{Because \tcode{basic_string_ref} refers to a constant sequence, \tcode{iterator} and \tcode{const_iterator} are the same type.}@
+    typedef std::reverse_iterator<const_iterator> const_reverse_iterator;
+    typedef const_reverse_iterator reverse_iterator;
+    typedef size_t size_type;
+    typedef ptrdiff_t difference_type;
+    static constexpr size_type npos = size_type(-1);
+
+    // \ref{string.ref.cons}, construct/copy
+    constexpr basic_string_ref() noexcept;
+    constexpr basic_string_ref(const basic_string_ref&) noexcept = default;
+    basic_string_ref& operator=(const basic_string_ref&) noexcept = default;
+    constexpr basic_string_ref(const charT* str);
+    constexpr basic_string_ref(const charT* str, size_type len);
+    // \ednote{No \tcode{initializer_list} constructor because [\ref{dcl.init.list}]p6 says it would likely store a dangling reference into the string_ref.}
+
+    // \ref{string.ref.iterators}, iterators
+    constexpr const_iterator begin() const noexcept;
+    constexpr const_iterator end() const noexcept;
+    constexpr const_iterator cbegin() const noexcept;
+    constexpr const_iterator cend() const noexcept;
+    // \ednote{\tcode{reverse_iterator} methods aren't \tcode{constexpr} because \tcode{reverse_iterator} isn't a literal type. It could only be a literal type on random-access base iterators, and I'm not sure we want that special case.}
+    const_reverse_iterator rbegin() const noexcept;
+    const_reverse_iterator rend() const noexcept;
+    const_reverse_iterator crbegin() const noexcept;
+    const_reverse_iterator crend() const noexcept;
+
+    // \ref{string.ref.capacity}, capacity
+    constexpr size_type size() const noexcept;
+    constexpr size_type length() const noexcept;
+    constexpr size_type max_size() const noexcept;
+    constexpr bool empty() const noexcept;
+
+    // \ref{string.ref.access}, element access
+    constexpr const charT& operator[](size_type pos) const;
+    const charT& at(size_t pos) const;
+    constexpr const charT& front() const;
+    constexpr const charT& back() const;
+    constexpr const charT* data() const noexcept;
+
+    // \ref{string.ref.modifiers}, modifiers:
+    void clear() noexcept;
+    void remove_prefix(size_type n);
+    void remove_suffix(size_type n);
+
+    // \ref{string.ref.ops}, string operations:
+    constexpr basic_string_ref substr(size_type pos, size_type n=npos) const;
+    constexpr int compare(basic_string_ref s) const noexcept;
+    constexpr int compare(const charT* s) const noexcept;
+    constexpr bool starts_with(basic_string_ref s) const noexcept;
+    constexpr bool starts_with(charT c) const noexcept;
+    constexpr bool starts_with(const charT* s) const noexcept;
+    constexpr bool ends_with(basic_string_ref s) const noexcept;
+    constexpr bool ends_with(charT c) const noexcept;
+    constexpr bool ends_with(const charT* s) const noexcept;
+
+    size_type find(basic_string_ref s) const noexcept;
+    size_type find(charT c) const noexcept;
+    size_type find(const charT* s) const noexcept;
+    size_type rfind(basic_string_ref s) const noexcept;
+    size_type rfind(charT c) const noexcept;
+    size_type rfind(const charT* s) const noexcept;
+    size_type find_first_of(basic_string_ref s) const noexcept;
+    size_type find_first_of(charT c) const noexcept;
+    size_type find_first_of(const charT* s) const noexcept;
+    size_type find_last_of(basic_string_ref s) const noexcept;
+    size_type find_last_of(charT c) const noexcept;
+    size_type find_last_of(const charT* s) const noexcept;
+    size_type find_first_not_of(basic_string_ref s) const noexcept;
+    size_type find_first_not_of(charT c) const noexcept;
+    size_type find_first_not_of(const charT* s) const noexcept;
+    size_type find_last_not_of(basic_string_ref s) const noexcept;
+    size_type find_last_not_of(charT c) const noexcept;
+    size_type find_last_not_of(const charT* s) const noexcept;
+  };
+\end{codeblock}
+
+\pnum
+Each member function of the form
+\begin{codeblock}
+rt fx1(const charT* s);      // such as compare(), find()
+\end{codeblock}
+requires that \range{s}{s+traits::length(s)} is a valid
+range\footnote{Implementations are not required to handle arguments that are not
+null terminated.} and returns \tcode{fx1(basic_string_ref(s))}.
+
+\pnum
+Each member function of the form
+\begin{codeblock}
+rt fx2(charT c);             // such as find()
+\end{codeblock}
+returns \tcode{fx2(basic_string_ref(\&c, 1))}.
+
+\rSec2[string.ref.cons]{\tcode{basic_string_ref} constructors and assignment operators}
+
+\indexlibrary{\idxcode{basic_string_ref}!constructor}%
+\begin{itemdecl}
+constexpr basic_string_ref();
+\end{itemdecl}
+
+\begin{itemdescr}
+\pnum
+\effects
+Constructs an empty \tcode{basic_string_ref}.
+
+\postcondition
+\tcode{empty() == true} and \range{data()}{data()} is a valid range.
+
+\end{itemdescr}
+
+\indexlibrary{\idxcode{basic_string_ref}!constructor}%
+\begin{itemdecl}
+basic_string_ref(const charT* str);
+\end{itemdecl}
+
+\begin{itemdescr}
+\pnum
+\requires
+\range{str}{str + traits::length(str)} must be a valid range.
+
+\pnum
+\effects
+Constructs a \tcode{basic_string_ref} referring to the same string as \tcode{str}, with the postconditions in Table~\ref{tab:string.ref.ctr.1}
+
+\begin{libefftabvalue}{\tcode{basic_string_ref(const charT*)} effects}{tab:string.ref.ctr.1}
+\tcode{data()}      &   \tcode{str}                                                            \\ \rowsep
+\tcode{size()}      &   0 if \tcode{str == nullptr} or \tcode{traits::length(str)} otherwise   \\ \rowsep
+\end{libefftabvalue}
+
+\complexity
+\bigoh{size()}
+\end{itemdescr}
+
+\indexlibrary{\idxcode{basic_string_ref}!constructor}%
+\begin{itemdecl}
+constexpr basic_string_ref(const charT* str, size_type len);
+\end{itemdecl}
+
+\begin{itemdescr}
+\pnum
+\requires
+\range{str}{str + len} must be a valid range.
+
+\effects
+Constructs a \tcode{basic_string_ref}, with the postconditions in Table~\ref{tab:string.ref.ctr.2}
+
+\begin{libefftabvalue}{\tcode{basic_string_ref(const charT*, size_type)} effects}{tab:string.ref.ctr.2}
+\tcode{data()}      &   \tcode{str}   \\ \rowsep
+\tcode{size()}      &   \tcode{len}   \\ \rowsep
+\end{libefftabvalue}
+\end{itemdescr}
+
+\rSec2[string.ref.iterators]{\tcode{basic_string_ref} iterator support}
+
+\indexlibrary{\idxcode{const_iterator}!\idxcode{basic_string_ref}}%
+\indexlibrary{\idxcode{basic_string_ref}!\idxcode{const_iterator}}%
+\begin{itemdecl}
+typedef @\impdef@ const_iterator;
+\end{itemdecl}
+
+\begin{itemdescr}
+\pnum
+A random-access, contiguous iterator type.
+
+\pnum
+For a \tcode{basic_string_ref} \tcode{str}, any operation that
+invalidates a pointer in the range
+\range{str.data()}{str.data()+str.size()} invalidates pointers and
+iterators returned from \tcode{str}'s methods.
+\end{itemdescr}
+
+\indexlibrary{\idxcode{basic_string_ref}!\idxcode{begin}}%
+\indexlibrary{\idxcode{begin}!\idxcode{basic_string_ref}}%
+\indexlibrary{\idxcode{basic_string_ref}!\idxcode{cbegin}}%
+\indexlibrary{\idxcode{cbegin}!\idxcode{basic_string_ref}}%
+\begin{itemdecl}
+constexpr const_iterator begin() const noexcept;
+constexpr const_iterator cbegin() const noexcept;
+\end{itemdecl}
+
+\begin{itemdescr}
+\pnum
+\returns
+An iterator referring to the first character in the string.
+\end{itemdescr}
+
+\indexlibrary{\idxcode{end}!\idxcode{basic_string_ref}}%
+\indexlibrary{\idxcode{basic_string_ref}!\idxcode{end}}%
+\indexlibrary{\idxcode{cend}!\idxcode{basic_string_ref}}%
+\indexlibrary{\idxcode{basic_string_ref}!\idxcode{cend}}%
+\begin{itemdecl}
+constexpr const_iterator end() const noexcept;
+constexpr const_iterator cend() const noexcept;
+\end{itemdecl}
+
+\begin{itemdescr}
+\pnum
+\returns
+An iterator which is the past-the-end value.
+\end{itemdescr}
+
+\indexlibrary{\idxcode{rbegin}!\idxcode{basic_string_ref}}%
+\indexlibrary{\idxcode{basic_string_ref}!\idxcode{rbegin}}%
+\indexlibrary{\idxcode{crbegin}!\idxcode{basic_string_ref}}%
+\indexlibrary{\idxcode{basic_string_ref}!\idxcode{crbegin}}%
+\begin{itemdecl}
+const_reverse_iterator rbegin() const noexcept;
+const_reverse_iterator crbegin() const noexcept;
+\end{itemdecl}
+
+\begin{itemdescr}
+\pnum
+\returns
+An iterator which is semantically equivalent to \tcode{reverse_iterator(end())}.
+\end{itemdescr}
+
+\indexlibrary{\idxcode{rend}!\idxcode{basic_string_ref}}%
+\indexlibrary{\idxcode{basic_string_ref}!\idxcode{rend}}%
+\indexlibrary{\idxcode{crend}!\idxcode{basic_string_ref}}%
+\indexlibrary{\idxcode{basic_string_ref}!\idxcode{crend}}%
+\begin{itemdecl}
+const_reverse_iterator rend() const noexcept;
+const_reverse_iterator crend() const noexcept;
+\end{itemdecl}
+
+\begin{itemdescr}
+\pnum
+\returns
+An iterator which is semantically equivalent to \tcode{reverse_iterator(begin())}.
+\end{itemdescr}
+
+\rSec2[string.ref.capacity]{\tcode{basic_string_ref} capacity}
+
+\indexlibrary{\idxcode{basic_string_ref}!\idxcode{size}}%
+\indexlibrary{\idxcode{size}!\idxcode{basic_string_ref}}%
+\begin{itemdecl}
+size_type size() const noexcept;
+\end{itemdecl}
+
+\begin{itemdescr}
+\pnum
+\returns
+A count of the number of char-like objects referred to by the string_ref.
+
+\pnum
+\complexity constant time.
+\end{itemdescr}
+
+\indexlibrary{\idxcode{length}!\idxcode{basic_string_ref}}%
+\indexlibrary{\idxcode{basic_string_ref}!\idxcode{length}}%
+\begin{itemdecl}
+size_type length() const noexcept;
+\end{itemdecl}
+
+\begin{itemdescr}
+\pnum
+\returns
+\tcode{size()}.
+\end{itemdescr}
+
+\indexlibrary{\idxcode{basic_string_ref}!\idxcode{max_size}}%
+\indexlibrary{\idxcode{max_size}!\idxcode{basic_string_ref}}%
+\begin{itemdecl}
+size_type max_size() const noexcept;
+\end{itemdecl}
+
+\begin{itemdescr}
+\pnum
+\returns
+The size of the largest possible string_ref.
+\end{itemdescr}
+
+\indexlibrary{\idxcode{basic_string_ref}!\idxcode{empty}}%
+\indexlibrary{\idxcode{empty}!\idxcode{basic_string_ref}}%
+\begin{itemdecl}
+bool empty() const noexcept;
+\end{itemdecl}
+
+\begin{itemdescr}
+\pnum
+\returns
+\tcode{size() == 0}.
+\end{itemdescr}
+
+\rSec2[string.ref.access]{\tcode{basic_string_ref} element access}
+
+\indexlibrary{\idxcode{basic_string_ref}!\idxcode{operator[]}}%
+\indexlibrary{\idxcode{operator[]}!\idxcode{basic_string_ref}}%
+\begin{itemdecl}
+constexpr const_reference operator[](size_type pos) const;
+\end{itemdecl}
+
+\begin{itemdescr}
+\pnum
+\requires \tcode{pos <= size()}.
+
+\pnum
+\returns \tcode{*(begin() + pos)}
+
+\pnum
+\throws Nothing.
+\end{itemdescr}
+
+\indexlibrary{\idxcode{basic_string_ref}!\idxcode{at}}%
+\indexlibrary{\idxcode{at}!\idxcode{basic_string_ref}}%
+\begin{itemdecl}
+constexpr const_reference at(size_type pos) const;
+\end{itemdecl}
+
+\begin{itemdescr}
+\pnum
+\throws
+\tcode{out_of_range} if \tcode{pos >= size()}.
+
+\pnum
+\returns
+\tcode{operator[](pos)}.
+\end{itemdescr}
+
+\indexlibrary{\idxcode{basic_string_ref}!\idxcode{front}}%
+\indexlibrary{\idxcode{front}!\idxcode{basic_string_ref}}%
+\begin{itemdecl}
+constexpr const charT& front() const;
+\end{itemdecl}
+
+\begin{itemdescr}
+\pnum
+\requires
+\tcode{!empty()}
+
+\pnum
+\effects
+Equivalent to \tcode{operator[](0)}.
+\end{itemdescr}
+
+\indexlibrary{\idxcode{basic_string_ref}!\idxcode{back}}%
+\indexlibrary{\idxcode{back}!\idxcode{basic_string_ref}}%
+\begin{itemdecl}
+constexpr const charT& back() const;
+\end{itemdecl}
+
+\begin{itemdescr}
+\pnum
+\requires
+\tcode{!empty()}
+
+\pnum
+\effects
+Equivalent to \tcode{operator[](size() - 1)}.
+\end{itemdescr}
+
+\indexlibrary{\idxcode{data}!\tcode{basic_string_ref}}%
+\begin{itemdecl}
+const charT* data() const noexcept;
+\end{itemdecl}
+
+\begin{itemdescr}
+\pnum
+\returns A pointer \tcode{p} such that \tcode{p + i == \&operator[](i)} for each
+\tcode{i} in \range{0}{size()}.
+
+\pnum
+\enternote Unlike \tcode{std::string::data()} and string literals,
+\tcode{data()} may return a pointer to a buffer that is not null-terminated.
+Therefore it is typically a mistake to pass \tcode{data()} to a routine that
+takes just a \tcode{const charT*} and expects a null-terminated string.
+\exitnote
+\end{itemdescr}
+
+\rSec2[string.ref.modifiers]{\tcode{basic_string_ref} modifiers}
+
+\indexlibrary{\idxcode{basic_string_ref}!\idxcode{clear}}%
+\indexlibrary{\idxcode{clear}!\idxcode{basic_string_ref}}%
+\begin{itemdecl}
+void clear() noexcept;
+\end{itemdecl}
+
+\begin{itemdescr}
+\pnum
+\effects
+Same as \tcode{*this = basic_string_ref()}
+\end{itemdescr}
+
+\indexlibrary{\idxcode{basic_string_ref}!\idxcode{remove_prefix}}%
+\indexlibrary{\idxcode{remove_prefix}!\idxcode{basic_string_ref}}%
+\begin{itemdecl}
+void remove_prefix(size_type n) noexcept;
+\end{itemdecl}
+
+\begin{itemdescr}
+\pnum
+\effects
+Same as \tcode{*this = substr(n, npos)}
+\end{itemdescr}
+
+\indexlibrary{\idxcode{basic_string_ref}!\idxcode{remove_suffix}}%
+\indexlibrary{\idxcode{remove_suffix}!\idxcode{basic_string_ref}}%
+\begin{itemdecl}
+void remove_suffix(size_type n) noexcept;
+\end{itemdecl}
+
+\begin{itemdescr}
+\pnum
+\effects
+Same as \tcode{*this = substr(0, size() - n)}
+\end{itemdescr}
+
+\rSec2[string.ref.ops]{\tcode{basic_string_ref} string operations}
+
+\pnum
+\enternote Unlike \tcode{std::basic_string}, \tcode{std::basic_string_ref}
+provides no whole-string methods with position or length parameters. Instead,
+users should use the \tcode{substr()} method to create the character sequence
+they're actually interested in, and use that.  \exitnote
+
+\indexlibrary{\idxcode{basic_string_ref}!\idxcode{substr}}%
+\indexlibrary{\idxcode{substr}!\idxcode{basic_string_ref}}%
+\begin{itemdecl}
+basic_string_ref substr(size_type pos, size_type n = npos) const;
+\end{itemdecl}
+
+\begin{itemdescr}
+\pnum
+\throws
+\tcode{out_of_range}
+if
+\tcode{pos > size()}.
+
+\pnum
+\effects
+Determines the effective length \tcode{rlen} of the string to reference as the
+smaller of \tcode{n} and \tcode{size() - pos}.
+
+\pnum
+\returns
+\tcode{basic_string_ref(data()+pos, rlen)}.
+\end{itemdescr}
+
+\indexlibrary{\idxcode{basic_string_ref}!\idxcode{compare}}%
+\indexlibrary{\idxcode{compare}!\idxcode{basic_string_ref}}%
+\begin{itemdecl}
+int compare(const basic_string_ref& str) const noexcept;
+\end{itemdecl}
+
+\begin{itemdescr}
+\pnum
+\effects
+Determines the effective length
+\textit{rlen}
+of the strings to compare as the smallest of
+\tcode{size()}
+and
+\tcode{str.size()}.
+The function then compares the two strings by calling
+\tcode{traits::compare(data(), str.data(), rlen)}.
+
+\pnum
+\complexity \bigoh{rlen}
+
+\pnum
+\returns
+The nonzero result if the result of the comparison is nonzero.
+Otherwise, returns a value as indicated in Table~\ref{tab:string.ref.compare}.
+
+\begin{floattable}{\tcode{compare()} results}{tab:string.ref.compare}
+{lc}
+\topline
+\lhdr{Condition}                &   \rhdr{Return Value} \\ \capsep
+\tcode{size() < \ str.size()}  &   \tcode{< 0}         \\
+\tcode{size() == str.size()}    &   \tcode{ \ 0}       \\
+\tcode{size() > \ str.size()}  &   \tcode{> 0}         \\
+\end{floattable}
+\end{itemdescr}
+
+\indexlibrary{\idxcode{basic_string_ref}!\idxcode{starts_with}}%
+\indexlibrary{\idxcode{starts_with}!\idxcode{basic_string_ref}}%
+\begin{itemdecl}
+bool starts_with(const basic_string_ref& prefix) const noexcept;
+\end{itemdecl}
+
+\begin{itemdescr}
+\pnum
+\complexity \bigoh{\tcode{min(size(), prefix.size())}}
+
+\returns
+\tcode{true} if \tcode{prefix} is a prefix of \tcode{*this}.
+\end{itemdescr}
+
+\indexlibrary{\idxcode{basic_string_ref}!\idxcode{ends_with}}%
+\indexlibrary{\idxcode{ends_with}!\idxcode{basic_string_ref}}%
+\begin{itemdecl}
+bool ends_with(const basic_string_ref& suffix) const noexcept;
+\end{itemdecl}
+
+\begin{itemdescr}
+\pnum
+\complexity \bigoh{\tcode{min(size(), suffix.size())}}
+
+\returns
+\tcode{true} if \tcode{suffix} is a suffix of \tcode{*this}.
+\end{itemdescr}
+
+\rSec3[string.ref.find]{Searching \tcode{basic_string_ref}}
+
+\pnum
+Member functions in this section have complexity \bigoh{\tcode{size() *
+\textit{argument}.size()}} at worst, although implementations are encouraged
+to do better.
+
+\indexlibrary{\idxcode{basic_string_ref}!\idxcode{find}}%
+\indexlibrary{\idxcode{find}!\idxcode{basic_string_ref}}%
+\begin{itemdecl}
+size_type find(const basic_string_ref& str) const noexcept;
+\end{itemdecl}
+
+\begin{itemdescr}
+\pnum
+\effects
+Determines the lowest position \tcode{xpos}, if possible, such that both of
+the following conditions obtain:
+
+\begin{itemize}
+\item
+\tcode{xpos + str.size() <= size()};
+\item
+\indexlibrary{\idxcode{eq}!\tcode{char_traits}}%
+\tcode{traits::eq(at(xpos+I), str.at(I))}
+for all elements \tcode{I} of the string referenced by \tcode{str}.
+\end{itemize}
+
+\pnum
+\returns
+\tcode{xpos} if the function can determine such a value for \tcode{xpos}.
+Otherwise, returns
+\tcode{npos}.
+
+\pnum
+\notes
+Uses
+\tcode{traits::eq()}.
+\end{itemdescr}
+
+\indexlibrary{\idxcode{basic_string_ref}!\idxcode{rfind}}%
+\indexlibrary{\idxcode{rfind}!\idxcode{basic_string_ref}}%
+\begin{itemdecl}
+size_type rfind(const basic_string_ref& str) const noexcept;
+\end{itemdecl}
+
+\begin{itemdescr}
+\pnum
+\effects
+Determines the highest position \tcode{xpos}, if possible, such that both of
+the following conditions obtain:
+
+\begin{itemize}
+\item
+\tcode{xpos + str.size() <= size()};
+\item
+\indexlibrary{\idxcode{eq}!\tcode{char_traits}}%
+\tcode{traits::eq(at(xpos+I), str.at(I))}
+for all elements \tcode{I} of the string referenced by \tcode{str}.
+\end{itemize}
+
+\pnum
+\returns
+\tcode{xpos} if the function can determine such a value for \tcode{xpos}.
+Otherwise, returns
+\tcode{npos}.
+
+\pnum
+\notes
+Uses
+\tcode{traits::eq()}.
+\end{itemdescr}
+
+\indexlibrary{\idxcode{basic_string_ref}!\idxcode{find_first_of}}%
+\indexlibrary{\idxcode{find_first_of}!\idxcode{basic_string_ref}}%
+\begin{itemdecl}
+size_type find_first_of(const basic_string_ref& str) const noexcept;
+\end{itemdecl}
+
+\begin{itemdescr}
+\pnum
+\effects
+Determines the lowest position \tcode{xpos}, if possible, such that both of
+the following conditions obtain:
+
+\begin{itemize}
+\item
+\tcode{xpos < size()};
+\item
+\indexlibrary{\idxcode{eq}!\tcode{char_traits}}%
+\tcode{traits::eq(at(xpos), str.at(I))}
+for some element \tcode{I} of the string referenced by \tcode{str}.
+\end{itemize}
+
+\pnum
+\returns
+\tcode{xpos} if the function can determine such a value for \tcode{xpos}.
+Otherwise, returns
+\tcode{npos}.
+
+\pnum
+\notes
+Uses
+\tcode{traits::eq()}.
+\end{itemdescr}
+
+\indexlibrary{\idxcode{basic_string_ref}!\idxcode{find_last_of}}%
+\indexlibrary{\idxcode{find_last_of}!\idxcode{basic_string_ref}}%
+\begin{itemdecl}
+size_type find_last_of(const basic_string_ref& str) const noexcept;
+\end{itemdecl}
+
+\begin{itemdescr}
+\pnum
+\effects
+Determines the highest position \tcode{xpos}, if possible, such that both of
+the following conditions obtain:
+
+\begin{itemize}
+\item
+\tcode{xpos < size()};
+\item
+\indexlibrary{\idxcode{eq}!\tcode{char_traits}}%
+\tcode{traits::eq(at(xpos), str.at(I))}
+for some element \tcode{I} of the string referenced by \tcode{str}.
+\end{itemize}
+
+\pnum
+\returns
+\tcode{xpos} if the function can determine such a value for \tcode{xpos}.
+Otherwise, returns
+\tcode{npos}.
+
+\pnum
+\notes
+Uses
+\tcode{traits::eq()}.
+\end{itemdescr}
+
+\indexlibrary{\idxcode{basic_string_ref}!\idxcode{find_first_not_of}}%
+\indexlibrary{\idxcode{find_first_not_of}!\idxcode{basic_string_ref}}%
+\begin{itemdecl}
+size_type find_first_not_of(const basic_string_ref& str) const noexcept;
+\end{itemdecl}
+
+\begin{itemdescr}
+\pnum
+\effects
+Determines the lowest position \tcode{xpos}, if possible, such that both of
+the following conditions obtain:
+
+\begin{itemize}
+\item
+\tcode{xpos < size()};
+\item
+\indexlibrary{\idxcode{eq}!\tcode{char_traits}}%
+\tcode{traits::eq(at(xpos), str.at(I))}
+for no element \tcode{I} of the string referenced by \tcode{str}.
+\end{itemize}
+
+\pnum
+\returns
+\tcode{xpos} if the function can determine such a value for \tcode{xpos}.
+Otherwise, returns
+\tcode{npos}.
+
+\pnum
+\notes
+Uses
+\tcode{traits::eq()}.
+\end{itemdescr}
+
+\indexlibrary{\idxcode{basic_string_ref}!\idxcode{find_last_not_of}}%
+\indexlibrary{\idxcode{find_last_not_of}!\idxcode{basic_string_ref}}%
+\begin{itemdecl}
+size_type find_last_not_of(const basic_string_ref& str) const noexcept;
+\end{itemdecl}
+
+\begin{itemdescr}
+\pnum
+\effects
+Determines the highest position \tcode{xpos}, if possible, such that both of
+the following conditions obtain:
+
+\begin{itemize}
+\item
+\tcode{xpos < size()};
+\item
+\indexlibrary{\idxcode{eq}!\tcode{char_traits}}%
+\tcode{traits::eq(at(xpos), str.at(I))}
+for no element \tcode{I} of the string
+referenced by \tcode{str}.
+\end{itemize}
+
+\pnum
+\returns
+\tcode{xpos} if the function can determine such a value for \tcode{xpos}.
+Otherwise, returns
+\tcode{npos}.
+
+\pnum
+\notes
+Uses
+\tcode{traits::eq()}.
+\end{itemdescr}
+
+\rSec2[string.ref.comparison]{\tcode{basic_string_ref} non-member comparison functions}
+
+\pnum
+
+Implementations shall provide sufficient additional overloads so that an object
+\tcode{t} with an implicit conversion to \tcode{basic_string_ref<charT, traits>}
+can be compared according to Table~\ref{tab:string.ref.comparison.overloads},
+where \tcode{sp} is an instance of \tcode{basic_string_ref<charT,
+traits>}.\footnote{Implementations could accomplish this by defining
+\begin{codeblock}^^J
+template<typename T> struct __identity \{ typedef T type; \};^^J
+template<typename charT, typename traits>^^J
+bool operator==(basic_string_ref<charT, traits> lhs,^^J
+\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ basic_string_ref<charT, traits> rhs) \{^^J
+\ \ return lhs.compare(rhs) == 0;^^J
+\}^^J
+template<typename charT, typename traits>^^J
+bool operator==(basic_string_ref<charT, traits> lhs,^^J
+\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ typename __identity<basic_string_ref<charT, traits>>::type rhs) \{^^J
+\ \ return lhs.compare(rhs) == 0;^^J
+\}^^J
+template<typename charT, typename traits>^^J
+bool operator==(typename __identity<basic_string_ref<charT, traits>>::type lhs,^^J
+\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ basic_string_ref<charT, traits> rhs) \{^^J
+\ \ return lhs.compare(rhs) == 0;^^J
+\}^^J
+\end{codeblock}
+and similarly for the other operators.
+}
+
+\begin{libtab2}{Additional \tcode{basic_string_ref} comparison overloads}
+{tab:string.ref.comparison.overloads}{ll}
+{Expression}{Returns}
+\tcode{t \ == sp}  &  \tcode{basic_string_ref<charT, traits>(t) == sp} \\ \rowsep
+\tcode{sp == t}  &  \tcode{sp == basic_string_ref<charT, traits>(t)} \\ \rowsep
+\tcode{t \ != sp}  &  \tcode{basic_string_ref<charT, traits>(t) != sp} \\ \rowsep
+\tcode{sp != t}  &  \tcode{sp != basic_string_ref<charT, traits>(t)} \\ \rowsep
+\tcode{t \ < \ sp}  &  \tcode{basic_string_ref<charT, traits>(t) < sp} \\ \rowsep
+\tcode{sp < \ t}  &  \tcode{sp < basic_string_ref<charT, traits>(t)} \\ \rowsep
+\tcode{t \ > \ sp}  &  \tcode{basic_string_ref<charT, traits>(t) > sp} \\ \rowsep
+\tcode{sp > \ t}  &  \tcode{sp > basic_string_ref<charT, traits>(t)} \\ \rowsep
+\tcode{t \ <= sp}  &  \tcode{basic_string_ref<charT, traits>(t) <= sp} \\ \rowsep
+\tcode{sp <= t}  &  \tcode{sp <= basic_string_ref<charT, traits>(t)} \\ \rowsep
+\tcode{t \ >= sp}  &  \tcode{basic_string_ref<charT, traits>(t) >= sp} \\ \rowsep
+\tcode{sp >= t}  &  \tcode{sp >= basic_string_ref<charT, traits>(t)} \\
+
+\end{libtab2}
+
+\indexlibrary{\idxcode{basic_string_ref}!\idxcode{operator==}}%
+\indexlibrary{\idxcode{operator==}!\idxcode{basic_string_ref}}%
+\begin{itemdecl}
+template<class charT, class traits>
+  bool operator==(basic_string_ref<charT,traits> lhs,
+                  basic_string_ref<charT,traits> rhs) noexcept;
+\end{itemdecl}
+
+\begin{itemdescr}
+\pnum
+\returns
+\tcode{lhs.compare(rhs) == 0}.
+\end{itemdescr}
+
+\indexlibrary{\idxcode{basic_string_ref}!\idxcode{operator"!=}}%
+\indexlibrary{\idxcode{operator"!=}!\idxcode{basic_string_ref}}%
+\begin{itemdecl}
+template<class charT, class traits>
+  bool operator!=(basic_string_ref<charT,traits> lhs,
+                  basic_string_ref<charT,traits> rhs) noexcept;
+\end{itemdecl}
+
+\begin{itemdescr}
+\pnum
+\returns
+\tcode{!(lhs == rhs)}.
+\end{itemdescr}
+
+\indexlibrary{\idxcode{basic_string_ref}!\idxcode{operator<}}%
+\indexlibrary{\idxcode{operator<}!\idxcode{basic_string_ref}}%
+\begin{itemdecl}
+template<class charT, class traits>
+  bool operator< (basic_string_ref<charT,traits> lhs,
+                  basic_string_ref<charT,traits> rhs) noexcept;
+\end{itemdecl}
+
+\begin{itemdescr}
+\pnum
+\returns
+\tcode{lhs.compare(rhs) < 0}.
+\end{itemdescr}
+
+\indexlibrary{\idxcode{operator>}!\idxcode{basic_string_ref}}%
+\indexlibrary{\idxcode{basic_string_ref}!\idxcode{operator>}}%
+\begin{itemdecl}
+template<class charT, class traits>
+  bool operator> (basic_string_ref<charT,traits> lhs,
+                  basic_string_ref<charT,traits> rhs) noexcept;
+\end{itemdecl}
+
+\begin{itemdescr}
+\pnum
+\returns
+\tcode{lhs.compare(rhs) > 0}.
+\end{itemdescr}
+
+\indexlibrary{\idxcode{operator<=}!\idxcode{basic_string_ref}}%
+\indexlibrary{\idxcode{basic_string_ref}!\idxcode{operator<=}}%
+\begin{itemdecl}
+template<class charT, class traits>
+  bool operator<=(basic_string_ref<charT,traits> lhs,
+                  basic_string_ref<charT,traits> rhs) noexcept;
+\end{itemdecl}
+
+\begin{itemdescr}
+\pnum
+\returns
+\tcode{lhs.compare(rhs) <= 0}.
+\end{itemdescr}
+
+\indexlibrary{\idxcode{operator>=}!\idxcode{basic_string_ref}}%
+\indexlibrary{\idxcode{basic_string_ref}!\idxcode{operator>=}}%
+\begin{itemdecl}
+template<class charT, class traits>
+  bool operator>=(basic_string_ref<charT,traits> lhs,
+                  basic_string_ref<charT,traits> rhs) noexcept;
+\end{itemdecl}
+
+\begin{itemdescr}
+\pnum
+\returns
+\tcode{lhs.compare(rhs) >= 0}.
+\end{itemdescr}
+
 
 \rSec1[basic.string]{Class template \tcode{basic_string}}
 
@@ -891,6 +1829,8 @@ namespace std {
       basic_string(InputIterator begin, InputIterator end,
                    const Allocator& a = Allocator());
     basic_string(initializer_list<charT>, const Allocator& = Allocator());
+    explicit basic_string(basic_string_ref<charT, traits>,
+                          const Allocator& = Allocator());@\footnote{This conversion is explicit to avoid accidental \bigoh{N} operations on type mismatches.}@
     basic_string(const basic_string&, const Allocator&);
     basic_string(basic_string&&, const Allocator&);
 
@@ -900,6 +1840,7 @@ namespace std {
     basic_string& operator=(const charT* s);
     basic_string& operator=(charT c);
     basic_string& operator=(initializer_list<charT>);
+    basic_string& operator=(basic_string_ref<charT, traits>);
 
     // \ref{string.iterators}, iterators:
     iterator       begin() noexcept;
@@ -945,6 +1886,7 @@ namespace std {
     basic_string& operator+=(const charT* s);
     basic_string& operator+=(charT c);
     basic_string& operator+=(initializer_list<charT>);
+    basic_string& operator+=(basic_string_ref<charT, traits>);
     basic_string& append(const basic_string& str);
     basic_string& append(const basic_string& str, size_type pos,
                          size_type n);
@@ -954,6 +1896,7 @@ namespace std {
     template<class InputIterator>
       basic_string& append(InputIterator first, InputIterator last);
     basic_string& append(initializer_list<charT>);
+    basic_string& append(basic_string_ref<charT, traits>);
     void push_back(charT c);
 
     basic_string& assign(const basic_string& str);
@@ -966,6 +1909,7 @@ namespace std {
     template<class InputIterator>
       basic_string& assign(InputIterator first, InputIterator last);
     basic_string& assign(initializer_list<charT>);
+    basic_string& assign(basic_string_ref<charT, traits>);
 
     basic_string& insert(size_type pos1, const basic_string& str);
     basic_string& insert(size_type pos1, const basic_string& str,
@@ -978,6 +1922,7 @@ namespace std {
     template<class InputIterator>
       iterator insert(const_iterator p, InputIterator first, InputIterator last);
     iterator insert(const_iterator p, initializer_list<charT>);
+    iterator insert(const_iterator p, basic_string_ref<charT, traits>);
 
     basic_string& erase(size_type pos = 0, size_type n = npos);
     iterator erase(const_iterator p);
@@ -1007,6 +1952,7 @@ namespace std {
       basic_string& replace(const_iterator i1, const_iterator i2,
                             InputIterator j1, InputIterator j2);
     basic_string& replace(const_iterator, const_iterator, initializer_list<charT>);
+    basic_string& replace(const_iterator, const_iterator, basic_string_ref<charT, traits>);
 
     size_type copy(charT* s, size_type n, size_type pos = 0) const;
     void swap(basic_string& str);
@@ -1014,6 +1960,7 @@ namespace std {
     // \ref{string.ops}, string operations:
     const charT* c_str() const noexcept;
     const charT* data() const noexcept;
+    operator basic_string_ref<charT, traits>() const noexcept;
     allocator_type get_allocator() const noexcept;
 
     size_type find (const basic_string& str, size_type pos = 0) const noexcept;
@@ -1338,6 +2285,17 @@ basic_string(initializer_list<charT> il, const Allocator& a = Allocator());
 \begin{itemdescr}
 \pnum
 \effects Same as \tcode{basic_string(il.begin(), il.end(), a)}.
+\end{itemdescr}
+
+\indexlibrary{\idxcode{basic_string}!constructor}%
+\begin{itemdecl}
+explicit basic_string(basic_string_ref<charT, traits> str, const Allocator& a = Allocator());\footnote{
+This constructor should be removed if a range constructor is added.}
+\end{itemdecl}
+
+\begin{itemdescr}
+\pnum
+\effects Same as \tcode{basic_string(str.begin(), str.end(), a)}.
 \end{itemdescr}
 
 \indexlibrary{\idxcode{basic_string}!constructor}%
@@ -2861,6 +3819,24 @@ const charT* data() const noexcept;
 The program shall not alter any of the values stored in the character array.
 \end{itemdescr}
 
+\indexlibrary{\idxcode{operator basic_string_ref}!\tcode{basic_string}}%
+\indexlibrary{\idxcode{basic_string}!\tcode{operator basic_string_ref}}%
+\begin{itemdecl}
+operator basic_string_ref<charT, traits>() const noexcept;
+\end{itemdecl}
+
+\begin{itemdescr}
+\pnum
+\returns \tcode{basic_string_ref<charT, traits>(data(), size())}.
+
+\pnum
+\complexity constant time.
+
+\pnum
+\requires
+The program shall not alter any of the values stored in the character array.
+\end{itemdescr}
+
 \indexlibrary{\idxcode{get_allocator}!\idxcode{basic_string}}%
 \indexlibrary{\idxcode{basic_string}!\idxcode{get_allocator}}%
 \begin{itemdecl}
@@ -3973,7 +4949,7 @@ template<class charT, class traits, class Allocator>
 Equivalent to \tcode{lhs.swap(rhs);}
 \end{itemdescr}
 
-\rSec3[string.io]{Inserters and extractors}
+\rSec1[string.io]{Inserters and extractors}
 
 \indexlibrary{\idxcode{operator\shr}!\idxcode{basic_string}}%
 \indexlibrary{\idxcode{basic_string}!\idxcode{operator\shr}}%
@@ -4037,11 +5013,17 @@ which may throw
 
 \indexlibrary{\idxcode{operator\shl}!\idxcode{basic_string}}%
 \indexlibrary{\idxcode{basic_string}!\idxcode{operator\shl}}%
+\indexlibrary{\idxcode{operator\shl}!\idxcode{basic_string_ref}}%
+\indexlibrary{\idxcode{basic_string_ref}!\idxcode{operator\shl}}%
 \begin{itemdecl}
 template<class charT, class traits, class Allocator>
   basic_ostream<charT, traits>&
     operator<<(basic_ostream<charT, traits>& os,
                const basic_string<charT,traits,Allocator>& str);
+template<class charT, class traits, class Allocator>
+  basic_ostream<charT, traits>&
+    operator<<(basic_ostream<charT, traits>& os,
+               basic_string_ref<charT,traits> str);
 \end{itemdecl}
 
 \begin{itemdescr}
@@ -4221,6 +5203,42 @@ or if the converted value is outside the range of representable
 values for the return type.
 \end{itemdescr}
 
+\indexlibrary{\idxcode{stoi}}%
+\indexlibrary{\idxcode{stol}}%
+\indexlibrary{\idxcode{stoul}}%
+\indexlibrary{\idxcode{stoll}}%
+\indexlibrary{\idxcode{stoull}}%
+\indexlibrary{\idxcode{stof}}%
+\indexlibrary{\idxcode{stol}}%
+\indexlibrary{\idxcode{stold}}%
+\begin{itemdecl}
+int stoi(string_ref str, size_t *idx = 0, int base = 10);
+long stol(string_ref str, size_t *idx = 0, int base = 10);
+unsigned long stoul(string_ref str, size_t *idx = 0, int base = 10);
+long long stoll(string_ref str, size_t *idx = 0, int base = 10);
+unsigned long long stoull(string_ref str, size_t *idx = 0, int base = 10);
+float stof(string_ref str, size_t *idx = 0);
+double stod(string_ref str, size_t *idx = 0);
+long double stold(string_ref str, size_t *idx = 0);
+\end{itemdecl}
+
+\begin{itemdescr}
+\pnum
+Each function of the form
+\begin{codeblock}
+rt fn(string_ref str, size_t *idx = 0, int base = 10);
+\end{codeblock}
+acts as if it were a call to \tcode{fn(string(str), idx, base)}.
+
+\pnum
+Each function of the form
+\begin{codeblock}
+rt fn(string_ref str, size_t *idx = 0);
+\end{codeblock}
+acts as if it were a call to \tcode{fn(string(str), idx)}.
+
+\end{itemdescr}
+
 \indexlibrary{\idxcode{to_string}}%
 \begin{itemdecl}
 string to_string(int val);
@@ -4311,6 +5329,42 @@ conversion could be performed. Throws \tcode{out_of_range} if \tcode{wcstod} or
 \tcode{wcstold} sets \tcode{errno} to \tcode{ERANGE}.
 \end{itemdescr}
 
+\indexlibrary{\idxcode{stoi}}%
+\indexlibrary{\idxcode{stol}}%
+\indexlibrary{\idxcode{stoul}}%
+\indexlibrary{\idxcode{stoll}}%
+\indexlibrary{\idxcode{stoull}}%
+\indexlibrary{\idxcode{stof}}%
+\indexlibrary{\idxcode{stod}}%
+\indexlibrary{\idxcode{stold}}%
+\begin{itemdecl}
+int stoi(wstring_ref str, size_t *idx = 0, int base = 10);
+long stol(wstring_ref str, size_t *idx = 0, int base = 10);
+unsigned long stoul(wstring_ref str, size_t *idx = 0, int base = 10);
+long long stoll(wstring_ref str, size_t *idx = 0, int base = 10);
+unsigned long long stoull(wstring_ref str, size_t *idx = 0, int base = 10);
+float stof(wstring_ref str, size_t *idx = 0);
+double stod(wstring_ref str, size_t *idx = 0);
+long double stold(wstring_ref str, size_t *idx = 0);
+\end{itemdecl}
+
+\begin{itemdescr}
+\pnum
+Each function of the form
+\begin{codeblock}
+rt fn(wstring_ref str, size_t *idx = 0, int base = 10);
+\end{codeblock}
+acts as if it were a call to \tcode{fn(wstring(str), idx, base)}.
+
+\pnum
+Each function of the form
+\begin{codeblock}
+rt fn(wstring_ref str, size_t *idx = 0);
+\end{codeblock}
+acts as if it were a call to \tcode{fn(wstring(str), idx)}.
+
+\end{itemdescr}
+
 \indexlibrary{\idxcode{to_wstring}}%
 \begin{itemdecl}
 wstring to_wstring(int val);
@@ -4345,6 +5399,10 @@ internal character buffer of sufficient size \tcode{buffsz}.
 
 \indexlibrary{\idxcode{hash}}%
 \begin{itemdecl}
+template <> struct hash<string_ref>;
+template <> struct hash<u16string_ref>;
+template <> struct hash<u32string_ref>;
+template <> struct hash<wstring_ref>;
 template <> struct hash<string>;
 template <> struct hash<u16string>;
 template <> struct hash<u32string>;
