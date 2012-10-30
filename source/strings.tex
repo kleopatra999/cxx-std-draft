@@ -625,6 +625,7 @@ namespace std {
   template<class charT, class traits = char_traits<charT>>
       class basic_string_ref;
 
+  // \ref{string.ref.comparison}, non-member basic_string_ref comparison functions
   template<typename charT, typename traits>
   bool operator==(basic_string_ref<charT, traits> x, basic_string_ref<charT, traits> y);
   template<typename charT, typename traits>
@@ -638,7 +639,14 @@ namespace std {
   template<typename charT, typename traits>
   bool operator>=(basic_string_ref<charT, traits> x, basic_string_ref<charT, traits> y);
   // Sufficient additional overloads to allow mixed comparisons with any type
-  // that has an implicit conversion to basic_string_ref<charT, traits>.
+  // that has an implicit conversion to \tcode{basic_string_ref<charT, traits>}.
+
+  // \ref{string.ref.nonmem}, other non-member basic_string_ref functions
+  template<class charT, class traits = char_traits<charT>,
+           class Allocator = allocator<charT> >
+    basic_string<charT, traits, Allocator> to_string(
+      basic_string_ref<charT, traits>,
+      const Allocator& a = Allocator());
 
   // \ref{basic.string}, basic_string:
   template<class charT, class traits = char_traits<charT>,
@@ -1608,7 +1616,6 @@ Uses
 \rSec2[string.ref.comparison]{\tcode{basic_string_ref} non-member comparison functions}
 
 \pnum
-
 Implementations shall provide sufficient additional overloads so that an object
 \tcode{t} with an implicit conversion to \tcode{basic_string_ref<charT, traits>}
 can be compared according to Table~\ref{tab:string.ref.comparison.overloads},
@@ -1735,6 +1742,27 @@ template<class charT, class traits>
 \pnum
 \returns
 \tcode{lhs.compare(rhs) >= 0}.
+\end{itemdescr}
+
+\rSec2[string.ref.nonmem]{Other \tcode{basic_string_ref} non-member functions}
+
+\indexlibrary{\idxcode{to_string}!\idxcode{basic_string_ref}}%
+\indexlibrary{\idxcode{basic_string_ref}!\idxcode{to_string}}%
+\begin{itemdecl}
+template<class charT, class traits = char_traits<charT>,
+         class Allocator = allocator<charT> >
+  basic_string<charT, traits, Allocator> to_string(
+    basic_string_ref<charT, traits> str,
+    const Allocator& a = Allocator());
+\end{itemdecl}
+
+\begin{itemdescr}
+\pnum
+\complexity \bigoh{\tcode{str.size()}}
+
+\pnum
+\returns
+\tcode{basic_string<charT, traits, Allocator>(str, a)}.
 \end{itemdescr}
 
 
