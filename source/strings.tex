@@ -1363,8 +1363,8 @@ basic_string(initializer_list<charT> il, const Allocator& a = Allocator());
 
 \indexlibrary{\idxcode{basic_string}!constructor}%
 \begin{itemdecl}
-template<typename Range
-  basic_string(Range&& range, const Allocator& a = Allocator());
+template<typename Range>
+  explicit basic_string(Range&& range, const Allocator& a = Allocator());
 \end{itemdecl}
 
 \begin{itemdescr}
