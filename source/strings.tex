@@ -1363,7 +1363,7 @@ basic_string(initializer_list<charT> il, const Allocator& a = Allocator());
 
 \indexlibrary{\idxcode{basic_string}!constructor}%
 \begin{itemdecl}
-template<typename Range>
+template<class Range>
   explicit basic_string(Range&& range, const Allocator& a = Allocator());
 \end{itemdecl}
 
@@ -1528,7 +1528,7 @@ basic_string& operator=(initializer_list<charT> il);
 \indexlibrary{\idxcode{operator=}!\idxcode{basic_string}}%
 \indexlibrary{\idxcode{basic_string}!\idxcode{operator=}}%
 \begin{itemdecl}
-template<typename Range>
+template<class Range>
   basic_string& operator=(Range&& range);
 \end{itemdecl}
 
@@ -1958,7 +1958,7 @@ basic_string& operator+=(initializer_list<charT> il);
 \indexlibrary{\idxcode{operator+=}!\idxcode{basic_string}}%
 \indexlibrary{\idxcode{basic_string}!\idxcode{operator+=}}%
 \begin{itemdecl}
-template<typename Range>
+template<class Range>
   basic_string& operator+=(Range&& range);
 \end{itemdecl}
 
@@ -2119,7 +2119,7 @@ basic_string& append(initializer_list<charT> il);
 \indexlibrary{\idxcode{append}!\idxcode{basic_string}}%
 \indexlibrary{\idxcode{basic_string}!\idxcode{append}}%
 \begin{itemdecl}
-template<typename Range>
+template<class Range>
   basic_string& append(Range&& range);
 \end{itemdecl}
 
@@ -2275,7 +2275,7 @@ basic_string& assign(initializer_list<charT> il);
 \indexlibrary{\idxcode{assign}!\idxcode{basic_string}}%
 \indexlibrary{\idxcode{basic_string}!\idxcode{assign}}%
 \begin{itemdecl}
-template<typename Range>
+template<class Range>
   basic_string& assign(Range&& range);
 \end{itemdecl}
 
@@ -2532,7 +2532,7 @@ iterator insert(const_iterator p, initializer_list<charT> il);
 \indexlibrary{\idxcode{insert}!\idxcode{basic_string}}%
 \indexlibrary{\idxcode{basic_string}!\idxcode{insert}}%
 \begin{itemdecl}
-template<typename Range>
+template<class Range>
   iterator insert(const_iterator p, Range&& range);
 \end{itemdecl}
 
@@ -2903,7 +2903,7 @@ basic_string& replace(const_iterator i1, const_iterator i2,
 \indexlibrary{\idxcode{replace}!\idxcode{basic_string}}%
 \indexlibrary{\idxcode{basic_string}!\idxcode{replace}}%
 \begin{itemdecl}
-template<typename Range>
+template<class Range>
   basic_string& replace(const_iterator i1, const_iterator i2,
                         Range&& range);
 \end{itemdecl}
@@ -2916,7 +2916,7 @@ template<typename Range>
 \effects Calls \tcode{replace(i1 - begin(), i2 - i1, begin(range), end(range))}.
 
 \pnum
-\tcode{*this}.
+\returns \tcode{*this}.
 \end{itemdescr}
 
 

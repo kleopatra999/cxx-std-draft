@@ -782,7 +782,7 @@ and refer to elements implicitly convertible to \tcode{value_type},
 \tcode{[i, j)}
 denotes a valid range,
 \tcode{r} denotes a valid range~(\ref{container.requirements.range}) whose
-value type is implicitly convertible to \tcode{value_type}.
+value type is implicitly convertible to \tcode{value_type},
 \tcode{il} designates an object of type \tcode{initializer_list<value_type>},
 \tcode{n}
 denotes a value of \tcode{X::size_type},
@@ -1351,7 +1351,7 @@ denotes a valid range,
 \tcode{q} denotes a valid dereferenceable const iterator to \tcode{a},
 \tcode{[q1, q2)} denotes a valid range of const iterators in \tcode{a},
 \tcode{r} denotes a valid range~(\ref{container.requirements.range}) whose
-value type is implicitly convertible to \tcode{value_type}.
+value type is implicitly convertible to \tcode{value_type},
 \tcode{il} designates an object of type \tcode{initializer_list<value_type>},
 \tcode{t} denotes a value of \tcode{X::value_type},
 \tcode{k} denotes a value of \tcode{X::key_type}
@@ -1636,7 +1636,7 @@ explicit X(Range&& range,
   const Allocator& alloc = Allocator())
 \end{codeblock}
 
-or the member functions of the forms:
+or the member functions of the form:
 
 \begin{codeblock}
 template <class Range>          // such as insert(), operator=()
@@ -1850,7 +1850,7 @@ to \tcode{value_type}, \tcode{[i, j)} is a valid range,
 \tcode{q} and \tcode{q1} are valid dereferenceable const iterators to \tcode{a},
 \tcode{[q1, q2)} is a valid range in \tcode{a},
 \tcode{r} denotes a valid range~(\ref{container.requirements.range}) whose
-value type is implicitly convertible to \tcode{value_type}.
+value type is implicitly convertible to \tcode{value_type},
 \tcode{il} designates an object of type \tcode{initializer_list<value_type>},
 \tcode{t} is a value of
 type \tcode{X::value_type}, \tcode{k} is a value of
@@ -2383,7 +2383,7 @@ explicit X(Range&& range,
   const allocator_type& a = allocator_type())
 \end{codeblock}
 
-or the member functions of the forms:
+or the member functions of the form:
 
 \begin{codeblock}
 template <class Range>          // such as insert(), operator=()
