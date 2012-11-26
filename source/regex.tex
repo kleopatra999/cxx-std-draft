@@ -425,6 +425,68 @@ namespace std {
     bool operator<=(typename iterator_traits<BiIter>::value_type const& lhs, 
                     const sub_match<BiIter>& rhs); 
 
+  template <class BiIter, class ST>
+    bool operator==(
+      basic_string_ref<
+        typename iterator_traits<BiIter>::value_type, ST> lhs,
+      const sub_match<BiIter>& rhs);
+  template <class BiIter, class ST>
+    bool operator!=(
+      basic_string_ref<
+        typename iterator_traits<BiIter>::value_type, ST> lhs,
+      const sub_match<BiIter>& rhs);
+  template <class BiIter, class ST>
+    bool operator<(
+      basic_string_ref<
+        typename iterator_traits<BiIter>::value_type, ST> lhs,
+      const sub_match<BiIter>& rhs);
+  template <class BiIter, class ST>
+    bool operator>(
+      basic_string_ref<
+        typename iterator_traits<BiIter>::value_type, ST> lhs,
+      const sub_match<BiIter>& rhs);
+  template <class BiIter, class ST>
+    bool operator>=(
+      basic_string_ref<
+        typename iterator_traits<BiIter>::value_type, ST> lhs,
+      const sub_match<BiIter>& rhs);
+  template <class BiIter, class ST>
+    bool operator<=(
+      basic_string_ref<
+        typename iterator_traits<BiIter>::value_type, ST> lhs,
+      const sub_match<BiIter>& rhs);
+
+  template <class BiIter, class ST>
+    bool operator==(
+      const sub_match<BiIter>& lhs,
+      basic_string_ref<
+        typename iterator_traits<BiIter>::value_type, ST> rhs);
+  template <class BiIter, class ST>
+    bool operator!=(
+      const sub_match<BiIter>& lhs,
+      basic_string_ref<
+        typename iterator_traits<BiIter>::value_type, ST> rhs);
+  template <class BiIter, class ST>
+    bool operator<(
+      const sub_match<BiIter>& lhs,
+      basic_string_ref<
+        typename iterator_traits<BiIter>::value_type, ST> rhs);
+  template <class BiIter, class ST>
+    bool operator>(
+      const sub_match<BiIter>& lhs,
+      basic_string_ref<
+        typename iterator_traits<BiIter>::value_type, ST> rhs);
+  template <class BiIter, class ST>
+    bool operator>=(
+      const sub_match<BiIter>& lhs,
+      basic_string_ref<
+        typename iterator_traits<BiIter>::value_type, ST> rhs);
+  template <class BiIter, class ST>
+    bool operator<=(
+      const sub_match<BiIter>& lhs,
+      basic_string_ref<
+        typename iterator_traits<BiIter>::value_type, ST> rhs);
+
   template <class BiIter> 
     bool operator==(const sub_match<BiIter>& lhs, 
                     typename iterator_traits<BiIter>::value_type const& rhs); 
@@ -497,6 +559,14 @@ namespace std {
                      const basic_regex<charT, traits>& e, 
                      regex_constants::match_flag_type flags =
                        regex_constants::match_default);
+  template <class ST, class Allocator, class charT, class traits>
+    bool regex_match(basic_string_ref<charT, ST> s,
+                     match_results<
+                       typename basic_string_ref<charT, ST>::const_iterator, 
+                       Allocator>& m, 
+                     const basic_regex<charT, traits>& e, 
+                     regex_constants::match_flag_type flags =
+                       regex_constants::match_default);
   template <class charT, class traits>
     bool regex_match(const charT* str,
                      const basic_regex<charT, traits>& e,
@@ -504,6 +574,11 @@ namespace std {
                        regex_constants::match_default);
   template <class ST, class SA, class charT, class traits>
     bool regex_match(const basic_string<charT, ST, SA>& s,
+                     const basic_regex<charT, traits>& e,
+                     regex_constants::match_flag_type flags =
+                       regex_constants::match_default);
+  template <class ST, class charT, class traits>
+    bool regex_match(basic_string_ref<charT, ST> s,
                      const basic_regex<charT, traits>& e,
                      regex_constants::match_flag_type flags =
                        regex_constants::match_default);
@@ -537,6 +612,11 @@ namespace std {
                       const basic_regex<charT, traits>& e,
                       regex_constants::match_flag_type flags =
                         regex_constants::match_default);
+  template <class ST, class charT, class traits>
+    bool regex_search(basic_string_ref<charT, ST> s,
+                      const basic_regex<charT, traits>& e,
+                      regex_constants::match_flag_type flags =
+                        regex_constants::match_default);
   template <class ST, class SA, class Allocator, class charT, class traits>
     bool regex_search(const basic_string<charT, ST, SA>& s,
                       match_results<
@@ -545,8 +625,25 @@ namespace std {
                       const basic_regex<charT, traits>& e,
                       regex_constants::match_flag_type flags =
                         regex_constants::match_default);
+  template <class ST, class Allocator, class charT, class traits>
+    bool regex_search(basic_string_ref<charT, ST> s,
+                      match_results<
+                        typename basic_string_ref<charT, ST>::const_iterator,
+                        Allocator>& m,
+                      const basic_regex<charT, traits>& e,
+                      regex_constants::match_flag_type flags =
+                        regex_constants::match_default);
 
   // \ref{re.alg.replace}, function template regex_replace:
+  template <class OutputIterator, class BidirectionalIterator,
+      class traits, class charT, class ST>
+    OutputIterator
+    regex_replace(OutputIterator out,
+                  BidirectionalIterator first, BidirectionalIterator last,
+                  const basic_regex<charT, traits>& e,
+                  basic_string_ref<charT, ST> fmt,
+                  regex_constants::match_flag_type flags =
+                    regex_constants::match_default);
   template <class OutputIterator, class BidirectionalIterator,
       class traits, class charT, class ST, class SA>
     OutputIterator 
@@ -563,6 +660,44 @@ namespace std {
                   BidirectionalIterator first, BidirectionalIterator last,
                   const basic_regex<charT, traits>& e,
                   const charT* fmt,
+                  regex_constants::match_flag_type flags =
+                    regex_constants::match_default);
+
+  template <class traits, class charT, class ST, class FST>
+    basic_string<charT, ST>
+    regex_replace(basic_string_ref<charT, ST> s,
+                  const basic_regex<charT, traits>& e,
+                  basic_string_ref<charT, FST> fmt,
+                  regex_constants::match_flag_type flags =
+                    regex_constants::match_default);
+  template <class traits, class charT, class ST>
+    basic_string<charT, ST>
+    regex_replace(basic_string_ref<charT, ST> s,
+                  const basic_regex<charT, traits>& e,
+                  const charT* fmt,
+                  regex_constants::match_flag_type flags =
+                    regex_constants::match_default);
+  template <class traits, class charT, class ST>
+    basic_string<charT>
+    regex_replace(const charT* s,
+                  const basic_regex<charT, traits>& e,
+                  basic_string_ref<charT, ST> fmt,
+                  regex_constants::match_flag_type flags =
+                    regex_constants::match_default);
+  template <class traits, class charT, class ST, class SA,
+            class FST>
+    basic_string<charT, ST, SA>
+    regex_replace(const basic_string<charT, ST, SA>& s,
+                  const basic_regex<charT, traits>& e,
+                  basic_string_ref<charT, FST> fmt,
+                  regex_constants::match_flag_type flags =
+                    regex_constants::match_default);
+  template <class traits, class charT, class ST,
+            class FST, class FSA>
+    basic_string<charT, ST>
+    regex_replace(basic_string_ref<charT, ST> s,
+                  const basic_regex<charT, traits>& e,
+                  const basic_string<charT, FST, FSA>& fmt,
                   regex_constants::match_flag_type flags =
                     regex_constants::match_default);
   template <class traits, class charT, class ST, class SA,
@@ -1326,6 +1461,9 @@ namespace std {
     basic_regex(const charT* p, size_t len, flag_type f = regex_constants::ECMAScript);
     basic_regex(const basic_regex&);
     basic_regex(basic_regex&&) noexcept;
+    template <class ST>
+      explicit basic_regex(basic_string_ref<charT, ST> p,
+                           flag_type f = regex_constants::ECMAScript);
     template <class ST, class SA>
       explicit basic_regex(const basic_string<charT, ST, SA>& p, 
                            flag_type f = regex_constants::ECMAScript);
@@ -1341,6 +1479,8 @@ namespace std {
     basic_regex& operator=(basic_regex&&) noexcept;
     basic_regex& operator=(const charT* ptr);
     basic_regex& operator=(initializer_list<charT> il);
+    template <class ST>
+      basic_regex& operator=(basic_string_ref<charT, ST> p);
     template <class ST, class SA>
       basic_regex& operator=(const basic_string<charT, ST, SA>& p);
 
@@ -1350,6 +1490,9 @@ namespace std {
     basic_regex& assign(const charT* ptr,
       flag_type f = regex_constants::ECMAScript);
     basic_regex& assign(const charT* p, size_t len, flag_type f);
+    template <class string_traits>
+      basic_regex& assign(basic_string_ref<charT, string_traits> s,
+                          flag_type f = regex_constants::ECMAScript);
     template <class string_traits, class A>
       basic_regex& assign(const basic_string<charT, string_traits, A>& s,
                           flag_type f = regex_constants::ECMAScript);
@@ -1499,6 +1642,9 @@ basic_regex(basic_regex&& e) noexcept;
 
 \indexlibrary{\idxcode{basic_regex}!\idxcode{basic_regex}}%
 \begin{itemdecl}
+template <class ST>
+  basic_regex(basic_string_ref<charT, ST> s,
+              flag_type f = regex_constants::ECMAScript);
 template <class ST, class SA>
   basic_regex(const basic_string<charT, ST, SA>& s, 
               flag_type f = regex_constants::ECMAScript);
@@ -1607,6 +1753,8 @@ basic_regex& operator=(initializer_list<charT> il);
 \indexlibrary{\idxcode{basic_regex}!\idxcode{operator=}}%
 \indexlibrary{\idxcode{operator=}!\idxcode{basic_regex}}%
 \begin{itemdecl}
+template <class ST>
+  basic_regex& operator=(basic_string_ref<charT, ST> p); 
 template <class ST, class SA>
   basic_regex& operator=(const basic_string<charT, ST, SA>& p); 
 \end{itemdecl}
@@ -1673,6 +1821,9 @@ basic_regex& assign(const charT* ptr, size_t len,
 \indexlibrary{\idxcode{basic_regex}!\idxcode{assign}}%
 \indexlibrary{\idxcode{assign}!\idxcode{basic_regex}}%
 \begin{itemdecl}
+template <class string_traits>
+  basic_regex& assign(basic_string_ref<charT, string_traits> s,
+                      flag_type f = regex_constants::ECMAScript);
 template <class string_traits, class A>
   basic_regex& assign(const basic_string<charT, string_traits, A>& s,
                       flag_type f = regex_constants::ECMAScript); 
@@ -1847,6 +1998,7 @@ namespace std {
      string_type str() const;
 
      int compare(const sub_match& s) const;
+     int compare(basic_string_ref<value_type> s) const;
      int compare(const string_type& s) const;
      int compare(const value_type* s) const;
   }; 
@@ -1905,6 +2057,16 @@ int compare(const sub_match& s) const;
 
 \begin{itemdescr}
 \pnum\returns  \tcode{str().compare(s.str())}.
+\end{itemdescr}
+
+\indexlibrary{\idxcode{sub_match}!\idxcode{compare}}%
+\indexlibrary{\idxcode{compare}!\idxcode{sub_match}}%
+\begin{itemdecl}
+int compare(basic_string_ref<value_type> s) const;
+\end{itemdecl}
+
+\begin{itemdescr}
+\pnum\returns  \tcode{str().compare(s)}.
 \end{itemdescr}
 
 \indexlibrary{\idxcode{sub_match}!\idxcode{compare}}%
@@ -2151,6 +2313,168 @@ template <class BiIter, class ST, class SA>
   bool operator<=(const sub_match<BiIter>& lhs,
                   const basic_string<
                     typename iterator_traits<BiIter>::value_type, ST, SA>& rhs);
+\end{itemdecl}
+
+\begin{itemdescr}
+\pnum\returns  \tcode{!(rhs < lhs)}.
+\end{itemdescr}
+
+\indexlibrary{\idxcode{sub_match}!\idxcode{operator==}}%
+\indexlibrary{\idxcode{operator==}!\idxcode{sub_match}}%
+\begin{itemdecl}
+template <class BiIter, class ST>
+  bool operator==(
+    basic_string_ref<
+      typename iterator_traits<BiIter>::value_type, ST> lhs,
+    const sub_match<BiIter>& rhs);
+\end{itemdecl}
+
+\begin{itemdescr}
+\pnum\returns  \tcode{rhs.compare(lhs) == 0}.
+\end{itemdescr}
+
+\indexlibrary{\idxcode{sub_match}!\idxcode{operator"!=}}%
+\indexlibrary{\idxcode{operator"!=}!\idxcode{sub_match}}%
+\begin{itemdecl}
+template <class BiIter, class ST>
+  bool operator!=(
+    basic_string_ref<
+      typename iterator_traits<BiIter>::value_type, ST> lhs,
+    const sub_match<BiIter>& rhs);
+\end{itemdecl}
+
+\begin{itemdescr}
+\pnum\returns  \tcode{!(lhs == rhs)}.
+\end{itemdescr}
+
+\indexlibrary{\idxcode{sub_match}!\idxcode{operator<}}%
+\indexlibrary{\idxcode{operator<}!\idxcode{sub_match}}%
+\begin{itemdecl}
+template <class BiIter, class ST>
+  bool operator<(
+    basic_string_ref<
+      typename iterator_traits<BiIter>::value_type, ST> lhs,
+    const sub_match<BiIter>& rhs);
+\end{itemdecl}
+
+\begin{itemdescr}
+\pnum\returns  \tcode{rhs.compare(lhs) > 0}.
+\end{itemdescr}
+
+\indexlibrary{\idxcode{sub_match}!\idxcode{operator>}}%
+\indexlibrary{\idxcode{operator>}!\idxcode{sub_match}}%
+\begin{itemdecl}
+template <class BiIter, class ST>
+  bool operator>(
+    basic_string_ref<
+      typename iterator_traits<BiIter>::value_type, ST> lhs,
+    const sub_match<BiIter>& rhs);
+\end{itemdecl}
+
+\begin{itemdescr}
+\pnum\returns  \tcode{rhs < lhs}.
+\end{itemdescr}
+
+\indexlibrary{\idxcode{sub_match}!\idxcode{operator>=}}%
+\indexlibrary{\idxcode{operator>=}!\idxcode{sub_match}}%
+\begin{itemdecl}
+template <class BiIter, class ST>
+  bool operator>=(
+    basic_string_ref<
+      typename iterator_traits<BiIter>::value_type, ST> lhs,
+    const sub_match<BiIter>& rhs);
+\end{itemdecl}
+
+\begin{itemdescr}
+\pnum\returns  \tcode{!(lhs < rhs)}.
+\end{itemdescr}
+
+\indexlibrary{\idxcode{sub_match}!\idxcode{operator<=}}%
+\indexlibrary{\idxcode{operator<=}!\idxcode{sub_match}}%
+\begin{itemdecl}
+template <class BiIter, class ST>
+  bool operator<=(
+    basic_string_ref<
+      typename iterator_traits<BiIter>::value_type, ST> lhs,
+    const sub_match<BiIter>& rhs);
+\end{itemdecl}
+
+\begin{itemdescr}
+\pnum\returns  \tcode{!(rhs < lhs)}.
+\end{itemdescr}
+
+\indexlibrary{\idxcode{operator==}!\idxcode{sub_match}}%
+\indexlibrary{\idxcode{sub_match}!\idxcode{operator==}}%
+\begin{itemdecl}
+template <class BiIter, class ST>
+  bool operator==(const sub_match<BiIter>& lhs,
+                  basic_string_ref<
+                    typename iterator_traits<BiIter>::value_type, ST> rhs);
+\end{itemdecl}
+
+\begin{itemdescr}
+\pnum\returns  \tcode{lhs.compare(rhs) == 0}.
+\end{itemdescr}
+
+\indexlibrary{\idxcode{operator"!=}!\idxcode{sub_match}}%
+\indexlibrary{\idxcode{sub_match}!\idxcode{operator"!=}}%
+\begin{itemdecl}
+template <class BiIter, class ST>
+  bool operator!=(const sub_match<BiIter>& lhs,
+                  basic_string_ref<
+                    typename iterator_traits<BiIter>::value_type, ST> rhs);
+\end{itemdecl}
+
+\begin{itemdescr}
+\pnum\returns  \tcode{!(lhs == rhs)}.
+\end{itemdescr}
+
+\indexlibrary{\idxcode{operator>}!\idxcode{sub_match}}%
+\indexlibrary{\idxcode{sub_match}!\idxcode{operator<}}%
+\begin{itemdecl}
+template <class BiIter, class ST>
+  bool operator<(const sub_match<BiIter>& lhs,
+                 basic_string_ref<
+                   typename iterator_traits<BiIter>::value_type, ST> rhs);
+\end{itemdecl}
+
+\begin{itemdescr}
+\pnum\returns  \tcode{lhs.compare(rhs) < 0}.
+\end{itemdescr}
+
+\indexlibrary{\idxcode{operator>}!\idxcode{sub_match}}%
+\indexlibrary{\idxcode{sub_match}!\idxcode{operator>}}%
+\begin{itemdecl}
+template <class BiIter, class ST>
+  bool operator>(const sub_match<BiIter>& lhs,
+                 basic_string_ref<
+                   typename iterator_traits<BiIter>::value_type, ST> rhs);
+\end{itemdecl}
+
+\begin{itemdescr}
+\pnum\returns  \tcode{rhs < lhs}.
+\end{itemdescr}
+
+\indexlibrary{\idxcode{operator>=}!\idxcode{sub_match}}%
+\indexlibrary{\idxcode{sub_match}!\idxcode{operator>=}}%
+\begin{itemdecl}
+template <class BiIter, class ST>
+  bool operator>=(const sub_match<BiIter>& lhs,
+                  basic_string_ref<
+                    typename iterator_traits<BiIter>::value_type, ST> rhs);
+\end{itemdecl}
+
+\begin{itemdescr}
+\pnum\returns  \tcode{!(lhs < rhs)}.
+\end{itemdescr}
+
+\indexlibrary{\idxcode{operator<=}!\idxcode{sub_match}}%
+\indexlibrary{\idxcode{sub_match}!\idxcode{operator<=}}%
+\begin{itemdecl}
+template <class BiIter, class ST>
+  bool operator<=(const sub_match<BiIter>& lhs,
+                  basic_string_ref<
+                    typename iterator_traits<BiIter>::value_type, ST> rhs);
 \end{itemdecl}
 
 \begin{itemdescr}
@@ -2566,12 +2890,23 @@ namespace std {
              const char_type* fmt_first, const char_type* fmt_last,
              regex_constants::match_flag_type flags =
               regex_constants::format_default) const;
+     template <class OutputIter, class ST>
+       OutputIter
+       format(OutputIter out,
+              basic_string_ref<char_type, ST> fmt,
+              regex_constants::match_flag_type flags =
+                regex_constants::format_default) const;
      template <class OutputIter, class ST, class SA>
        OutputIter
        format(OutputIter out,
               const basic_string<char_type, ST, SA>& fmt,
               regex_constants::match_flag_type flags =
                 regex_constants::format_default) const;
+     template <class ST>
+      basic_string<char_type, ST>
+      format(basic_string_ref<char_type, ST> fmt,
+             regex_constants::match_flag_type flags =
+               regex_constants::format_default) const;
      template <class ST, class SA>
       basic_string<char_type, ST, SA>
       format(const basic_string<char_type, ST, SA>& fmt,
@@ -2881,6 +3216,11 @@ specifiers and escape sequences are recognized.
 \indexlibrary{\idxcode{match_results}!\idxcode{format}}%
 \indexlibrary{\idxcode{format}!\idxcode{match_results}}%
 \begin{itemdecl}
+template <class OutputIter, class ST>
+  OutputIter format(OutputIter out,
+                    basic_string_ref<char_type, ST> fmt,
+                    regex_constants::match_flag_type flags =
+                      regex_constants::format_default) const;
 template <class OutputIter, class ST, class SA>
   OutputIter format(OutputIter out,
                     const basic_string<char_type, ST, SA>& fmt,
@@ -2892,6 +3232,29 @@ template <class OutputIter, class ST, class SA>
 \pnum
 \effects Equivalent to \tcode{return format(out, fmt.data(),}
 \tcode{fmt.data() + fmt.size(), flags)}.
+\end{itemdescr}
+
+\indexlibrary{\idxcode{match_results}!\idxcode{format}}%
+\indexlibrary{\idxcode{format}!\idxcode{match_results}}%
+\begin{itemdecl}
+template <class ST>
+  basic_string<char_type, ST>
+  format(basic_string_ref<char_type, ST>& fmt,
+         regex_constants::match_flag_type flags =
+           regex_constants::format_default) const;
+\end{itemdecl}
+
+\begin{itemdescr}
+\pnum
+\requires \tcode{ready() == true}.
+
+\pnum
+\effects
+Constructs an empty string \tcode{result} of type \tcode{basic_string<char_type, ST>} and
+calls \tcode{format(back_inserter(result), fmt, flags)}.
+
+\pnum
+\returns\ \tcode{result}.
 \end{itemdescr}
 
 \indexlibrary{\idxcode{match_results}!\idxcode{format}}%
@@ -3175,6 +3538,14 @@ template <class charT, class Allocator, class traits>
 
 \indexlibrary{\idxcode{regex_match}}%
 \begin{itemdecl}
+template <class ST, class Allocator, class charT, class traits>
+  bool regex_match(basic_string_ref<charT, ST> s,
+                   match_results<
+                     typename basic_string_ref<charT, ST>::const_iterator,
+                     Allocator>& m,
+                   const basic_regex<charT, traits>& e,
+                   regex_constants::match_flag_type flags =
+                     regex_constants::match_default);
 template <class ST, class SA, class Allocator, class charT, class traits>
   bool regex_match(const basic_string<charT, ST, SA>& s,
                    match_results<
@@ -3206,6 +3577,11 @@ template <class charT, class traits>
 
 \indexlibrary{\idxcode{regex_match}}%
 \begin{itemdecl}
+template <class ST, class charT, class traits>
+  bool regex_match(basic_string_ref<charT, ST> s,
+                   const basic_regex<charT, traits>& e,
+                   regex_constants::match_flag_type flags =
+                     regex_constants::match_default); 
 template <class ST, class SA, class charT, class traits>
   bool regex_match(const basic_string<charT, ST, SA>& s,
                    const basic_regex<charT, traits>& e,
@@ -3333,6 +3709,14 @@ str + char_traits<charT>::length(str), m, e, flags)}.
 
 \indexlibrary{\idxcode{regex_search}}%
 \begin{itemdecl}
+template <class ST, class Allocator, class charT, class traits>
+  bool regex_search(basic_string_ref<charT, ST> s,
+                    match_results<
+                      typename basic_string_ref<charT, ST>::const_iterator,
+                      Allocator>& m,
+                    const basic_regex<charT, traits>& e,
+                    regex_constants::match_flag_type flags =
+                      regex_constants::match_default);
 template <class ST, class SA, class Allocator, class charT, class traits>
   bool regex_search(const basic_string<charT, ST, SA>& s,
                     match_results<
@@ -3382,6 +3766,11 @@ e, flags)}
 \indexlibrary{\idxcode{regex_search}}%
 \begin{itemdecl}
 template <class ST, class SA, class charT, class traits>
+  bool regex_search(basic_string_ref<charT, ST>& s,
+                    const basic_regex<charT, traits>& e,
+                    regex_constants::match_flag_type flags =
+                      regex_constants::match_default);
+template <class ST, class SA, class charT, class traits>
   bool regex_search(const basic_string<charT, ST, SA>& s,
                     const basic_regex<charT, traits>& e,
                     regex_constants::match_flag_type flags =
@@ -3398,11 +3787,20 @@ template <class ST, class SA, class charT, class traits>
 \begin{itemdecl}
 template <class OutputIterator, class BidirectionalIterator,
     class traits, class charT, class ST, class SA>
-  OutputIterator 
+  OutputIterator
   regex_replace(OutputIterator out,
                 BidirectionalIterator first, BidirectionalIterator last,
                 const basic_regex<charT, traits>& e,
                 const basic_string<charT, ST, SA>& fmt,
+                regex_constants::match_flag_type flags =
+                  regex_constants::match_default);
+template <class OutputIterator, class BidirectionalIterator,
+    class traits, class charT, class ST>
+  OutputIterator
+  regex_replace(OutputIterator out,
+                BidirectionalIterator first, BidirectionalIterator last,
+                const basic_regex<charT, traits>& e,
+                basic_string_ref<charT, ST> fmt,
                 regex_constants::match_flag_type flags =
                   regex_constants::match_default);
 template <class OutputIterator, class BidirectionalIterator,
@@ -3431,8 +3829,8 @@ last, out)}.  If any matches are found then, for each such match,
 if \tcode{!(flags \& regex_constants::format_no_copy)}, calls 
 \tcode{std\colcol{}copy(m.prefix().first, m.prefix().second, \brk{}out)}, and
 then calls \tcode{m.format(out, fmt, flags)}
-for the first form of the function and
-\tcode{m.format(out,} \tcode{fmt, fmt + char_traits<charT>::length(fmt), flags)} for the second. Finally, if such a match
+for the first and second forms of the function and
+\tcode{m.format(out,} \tcode{fmt, fmt + char_traits<charT>::length(fmt), flags)} for the third. Finally, if such a match
 is found and \tcode{!(flags \& regex_constants \colcol format_no_copy)},
 calls \tcode{std::\brk{}copy(last_m.suffix().first, last_m.suffix().second,
 out)} where \tcode{last_m} is a copy of the last match
@@ -3444,11 +3842,53 @@ is non-zero then only the first match found is replaced.
 
 \indexlibrary{\idxcode{regex_replace}}%
 \begin{itemdecl}
+template <class traits, class charT, class ST, class FST, class FSA>
+  basic_string<charT, ST>
+  regex_replace(basic_string_ref<charT, ST> s,
+                const basic_regex<charT, traits>& e,
+                const basic_string<charT, FST, FSA>& fmt,
+                regex_constants::match_flag_type flags =
+                  regex_constants::match_default); 
+template <class traits, class charT, class ST, class FST>
+  basic_string<charT, ST>
+  regex_replace(basic_string_ref<charT, ST> s,
+                const basic_regex<charT, traits>& e,
+                basic_string_ref<charT, FST> fmt,
+                regex_constants::match_flag_type flags =
+                  regex_constants::match_default); 
+template <class traits, class charT, class ST>
+  basic_string<charT, ST>
+  regex_replace(basic_string_ref<charT, ST> s,
+                const basic_regex<charT, traits>& e,
+                const charT* fmt,
+                regex_constants::match_flag_type flags =
+                  regex_constants::match_default);
+\end{itemdecl}
+
+\begin{itemdescr}
+\pnum\effects  Constructs an empty string \tcode{result} of
+type \tcode{basic_string<charT, ST>} and calls 
+\tcode{regex_replace(back_inserter(result), s.begin(), s.end(), e, fmt,
+flags)}.
+
+\pnum
+\returns\ \tcode{result}.
+\end{itemdescr}
+
+\indexlibrary{\idxcode{regex_replace}}%
+\begin{itemdecl}
 template <class traits, class charT, class ST, class SA, class FST, class FSA>
   basic_string<charT, ST, SA>
   regex_replace(const basic_string<charT, ST, SA>& s,
                 const basic_regex<charT, traits>& e,
                 const basic_string<charT, FST, FSA>& fmt,
+                regex_constants::match_flag_type flags =
+                  regex_constants::match_default); 
+template <class traits, class charT, class ST, class SA, class FST>
+  basic_string<charT, ST, SA>
+  regex_replace(const basic_string<charT, ST, SA>& s,
+                const basic_regex<charT, traits>& e,
+                basic_string_ref<charT, FST> fmt,
                 regex_constants::match_flag_type flags =
                   regex_constants::match_default); 
 template <class traits, class charT, class ST, class SA>
@@ -3477,6 +3917,13 @@ template <class traits, class charT, class ST, class SA>
   regex_replace(const charT* s,
                 const basic_regex<charT, traits>& e,
                 const basic_string<charT, ST, SA>& fmt,
+                regex_constants::match_flag_type flags =
+                  regex_constants::match_default);
+template <class traits, class charT, class ST>
+  basic_string<charT>
+  regex_replace(const charT* s,
+                const basic_regex<charT, traits>& e,
+                basic_string_ref<charT, ST> fmt,
                 regex_constants::match_flag_type flags =
                   regex_constants::match_default);
 template <class traits, class charT>

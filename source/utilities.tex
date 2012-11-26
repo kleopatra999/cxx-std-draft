@@ -1854,6 +1854,10 @@ namespace std {
     // \ref{bitset.cons} constructors:
     constexpr bitset() noexcept;
     constexpr bitset(unsigned long long val) noexcept;
+    template<class charT, class traits>
+      explicit bitset(
+        basic_string_ref<charT,traits> str,
+        charT zero = charT('0'), charT one = charT('1'));
     template<class charT, class traits, class Allocator>
       explicit bitset(
         const basic_string<charT,traits,Allocator>& str,
@@ -1994,6 +1998,45 @@ If \tcode{M < N}, the remaining bit positions are initialized to zero.
 \indexlibrary{\idxcode{bitset}!\idxcode{bitset}}
 \indexlibrary{\idxcode{bitset}!\idxcode{bitset}}
 \begin{itemdecl}
+template <class charT, class traits>
+explicit
+bitset(basic_string_ref<charT, traits> str,
+       charT zero = charT('0'), charT one = charT('1'));
+\end{itemdecl}
+
+\begin{itemdescr}
+\pnum
+\throws
+\indexlibrary{\idxcode{invalid_argument}}
+\tcode{invalid_argument}
+if any of the characters in \tcode{str} is
+other than \tcode{zero} or \tcode{one}. The function uses \tcode{traits::eq()}
+to compare the character values.
+
+\pnum
+\effects
+The function constructs an object of class
+\tcode{bitset<N>},
+initializing the first \tcode{M} bit
+positions to values determined from the corresponding characters in the string
+\tcode{str}.
+\tcode{M} is the smaller of \tcode{N} and \tcode{str.size()}.
+
+\pnum
+An element of the constructed string has value zero if the
+corresponding character in \tcode{str}, beginning at position
+\tcode{pos}, is \tcode{zero}. Otherwise, the element has the value 1.
+Character position \tcode{M - 1} corresponds to bit position
+zero.  Subsequent decreasing character positions correspond to
+increasing bit positions.
+
+\pnum
+If \tcode{M < N}, remaining bit positions are initialized to zero.
+\end{itemdescr}
+
+\indexlibrary{\idxcode{bitset}!\idxcode{bitset}}
+\indexlibrary{\idxcode{bitset}!\idxcode{bitset}}
+\begin{itemdecl}
 template <class charT, class traits, class Allocator>
 explicit
 bitset(const basic_string<charT, traits, Allocator>& str,
@@ -2005,49 +2048,13 @@ bitset(const basic_string<charT, traits, Allocator>& str,
 
 \begin{itemdescr}
 \pnum
-\requires
-\tcode{pos <= str.size()}.
+\effects Constructs an object of class \tcode{bitset<N>} as if by
 
-\pnum
-\throws
-\tcode{out_of_range}
-if
-\tcode{pos > str.size()}.%
-\indexlibrary{\idxcode{out_of_range}}
+\begin{codeblock}
+bitset(basic_string_ref<charT, traits>(str).substr(pos, n),
+       zero, one)
+\end{codeblock}
 
-\pnum
-\effects
-Determines the effective length
-\tcode{rlen} of the initializing string as the smaller of
-\tcode{n} and
-\tcode{str.size() - pos}.
-
-The function then throws%
-\indexlibrary{\idxcode{invalid_argument}}
-\tcode{invalid_argument}
-if any of the \tcode{rlen}
-characters in \tcode{str} beginning at position \tcode{pos} is
-other than \tcode{zero} or \tcode{one}. The function uses \tcode{traits::eq()}
-to compare the character values.
-
-Otherwise, the function constructs an object of class
-\tcode{bitset<N>},
-initializing the first \tcode{M} bit
-positions to values determined from the corresponding characters in the string
-\tcode{str}.
-\tcode{M} is the smaller of \tcode{N} and \tcode{rlen}.
-
-\pnum
-An element of the constructed string has value zero if the
-corresponding character in \tcode{str}, beginning at position
-\tcode{pos}, is
-\tcode{0} \tcode{zero}.
-Otherwise, the element has the value 1.
-Character position \tcode{pos + M - 1} corresponds to bit position zero.
-Subsequent decreasing character positions correspond to increasing bit positions.
-
-\pnum
-If \tcode{M < N}, remaining bit positions are initialized to zero.
 \end{itemdescr}
 
 \indexlibrary{\idxcode{bitset}!\idxcode{bitset}}
@@ -2067,9 +2074,9 @@ template <class charT>
 \begin{codeblock}
 bitset(
   n == basic_string<charT>::npos
-    ? basic_string<charT>(str)
-    : basic_string<charT>(str, n),
-  0, n, zero, one)
+    ? basic_string_ref<charT>(str)
+    : basic_string_ref<charT>(str, n),
+  zero, one)
 \end{codeblock}
 
 \end{itemdescr}

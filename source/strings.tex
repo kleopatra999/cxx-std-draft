@@ -805,24 +805,32 @@ namespace std {
   typedef basic_string<wchar_t> wstring;
 
   // \ref{string.conversions}, numeric conversions:
-  // \ednote{If we remove the \tcode{string} overloads, it could break code that relies on an implicit conversion to string.  If we leave the \tcode{string} overloads, we need to also add \tcode{const char*} overloads since that conversion will now be ambiguous.}
+  // \ednote{It would be nice to remove the \tcode{string} overloads, but that could break code that relies on an implicit conversion to string.  Instead, we need to add \tcode{const char*} overloads to avoid ambiguity.}
   // \ednote{We'd like to add \tcode{optional<T> stox_consume(string_ref\&, int base=10)} if/when \tcode{optional} becomes available.}
   int stoi(const string& str, size_t *idx = 0, int base = 10);
   int stoi(string_ref str, size_t* idx = 0, int base = 10);
+  int stoi(const char* str, size_t* idx = 0, int base = 10);
   long stol(const string& str, size_t *idx = 0, int base = 10);
   long stol(string_ref str, size_t* idx = 0, int base = 10);
+  long stol(const char* str, size_t* idx = 0, int base = 10);
   unsigned long stoul(const string& str, size_t *idx = 0, int base = 10);
   unsigned long stoul(string_ref str, size_t* idx = 0, int base = 10);
+  unsigned long stoul(const char* str, size_t* idx = 0, int base = 10);
   long long stoll(const string& str, size_t *idx = 0, int base = 10);
   long long stoll(string_ref str, size_t* idx = 0, int base = 10);
+  long long stoll(const char* str, size_t* idx = 0, int base = 10);
   unsigned long long stoull(const string& str, size_t *idx = 0, int base = 10);
   unsigned long long stoull(string_ref str, size_t* idx = 0, int base = 10);
+  unsigned long long stoull(const char* str, size_t* idx = 0, int base = 10);
   float stof(const string& str, size_t *idx = 0);
   float stof(string_ref str, size_t* idx = 0);
+  float stof(const char* str, size_t* idx = 0);
   double stod(const string& str, size_t *idx = 0);
   double stod(string_ref str, size_t* idx = 0);
+  double stod(const char* str, size_t* idx = 0);
   long double stold(const string& str, size_t *idx = 0);
   long double stold(string_ref str, size_t* idx = 0);
+  long double stold(const char* str, size_t* idx = 0);
 
   string to_string(int val);
   string to_string(unsigned val);
@@ -836,20 +844,28 @@ namespace std {
 
   int stoi(const wstring& str, size_t *idx = 0, int base = 10);
   int stoi(wstring_ref str, size_t* idx = 0, int base = 10);
+  int stoi(const wchar_t* str, size_t* idx = 0, int base = 10);
   long stol(const wstring& str, size_t *idx = 0, int base = 10);
   long stol(wstring_ref str, size_t* idx = 0, int base = 10);
+  long stol(const wchar_t* str, size_t* idx = 0, int base = 10);
   unsigned long stoul(const wstring& str, size_t *idx = 0, int base = 10);
   unsigned long stoul(wstring_ref str, size_t* idx = 0, int base = 10);
+  unsigned long stoul(const wchar_t* str, size_t* idx = 0, int base = 10);
   long long stoll(const wstring& str, size_t *idx = 0, int base = 10);
   long long stoll(wstring_ref str, size_t* idx = 0, int base = 10);
+  long long stoll(const wchar_t* str, size_t* idx = 0, int base = 10);
   unsigned long long stoull(const wstring& str, size_t *idx = 0, int base = 10);
   unsigned long long stoull(wstring_ref str, size_t* idx = 0, int base = 10);
+  unsigned long long stoull(const wchar_t* str, size_t* idx = 0, int base = 10);
   float stof(const wstring& str, size_t *idx = 0);
   float stof(wstring_ref str, size_t* idx = 0);
+  float stof(const wchar_t* str, size_t* idx = 0);
   double stod(const wstring& str, size_t *idx = 0);
   double stod(wstring_ref str, size_t* idx = 0);
+  double stod(const wchar_t* str, size_t* idx = 0);
   long double stold(const wstring& str, size_t *idx = 0);
   long double stold(wstring_ref str, size_t* idx = 0);
+  long double stold(const wchar_t* str, size_t* idx = 0);
 
   wstring to_wstring(int val);
   wstring to_wstring(unsigned val);
@@ -926,7 +942,7 @@ namespace std {
     constexpr const_iterator end() const noexcept;
     constexpr const_iterator cbegin() const noexcept;
     constexpr const_iterator cend() const noexcept;
-    // \ednote{\tcode{reverse_iterator} methods aren't \tcode{constexpr} because \tcode{reverse_iterator} isn't a literal type. It could only be a literal type on random-access base iterators, and I'm not sure we want that special case.}
+    // \ednote{\tcode{reverse_iterator} methods aren't \tcode{constexpr} because \tcode{reverse_iterator} isn't a literal type.  See LWG Issue 2208.}
     const_reverse_iterator rbegin() const noexcept;
     const_reverse_iterator rend() const noexcept;
     const_reverse_iterator crbegin() const noexcept;
@@ -1199,13 +1215,19 @@ constexpr const_reference operator[](size_type pos) const;
 
 \begin{itemdescr}
 \pnum
-\requires \tcode{pos <= size()}.
+\requires \tcode{pos < size()}.
 
 \pnum
 \returns \tcode{*(begin() + pos)}
 
 \pnum
 \throws Nothing.
+
+\pnum
+\enternote Unlike \tcode{basic_string::operator[]}, \tcode{basic_string_ref::operator[](size())}
+has undefined behavior instead of returning \tcode{charT()}.
+\exitnote
+
 \end{itemdescr}
 
 \indexlibrary{\idxcode{basic_string_ref}!\idxcode{at}}%
@@ -1620,27 +1642,7 @@ Implementations shall provide sufficient additional overloads so that an object
 \tcode{t} with an implicit conversion to \tcode{basic_string_ref<charT, traits>}
 can be compared according to Table~\ref{tab:string.ref.comparison.overloads},
 where \tcode{sp} is an instance of \tcode{basic_string_ref<charT,
-traits>}.\footnote{Implementations could accomplish this by defining
-\begin{codeblock}^^J
-template<typename T> struct __identity \{ typedef T type; \};^^J
-template<typename charT, typename traits>^^J
-bool operator==(basic_string_ref<charT, traits> lhs,^^J
-\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ basic_string_ref<charT, traits> rhs) \{^^J
-\ \ return lhs.compare(rhs) == 0;^^J
-\}^^J
-template<typename charT, typename traits>^^J
-bool operator==(basic_string_ref<charT, traits> lhs,^^J
-\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ typename __identity<basic_string_ref<charT, traits>>::type rhs) \{^^J
-\ \ return lhs.compare(rhs) == 0;^^J
-\}^^J
-template<typename charT, typename traits>^^J
-bool operator==(typename __identity<basic_string_ref<charT, traits>>::type lhs,^^J
-\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ basic_string_ref<charT, traits> rhs) \{^^J
-\ \ return lhs.compare(rhs) == 0;^^J
-\}^^J
-\end{codeblock}
-and similarly for the other operators.
-}
+traits>}.
 
 \begin{libtab2}{Additional \tcode{basic_string_ref} comparison overloads}
 {tab:string.ref.comparison.overloads}{ll}
@@ -1659,6 +1661,27 @@ and similarly for the other operators.
 \tcode{sp >= t}  &  \tcode{sp >= basic_string_ref<charT, traits>(t)} \\
 
 \end{libtab2}
+
+\enterexample A sample conforming implementation for \tcode{operator==} would be:
+\begin{codeblock}
+template<typename T> struct __identity { typedef T type; };
+template<typename charT, typename traits>
+bool operator==(basic_string_ref<charT, traits> lhs,
+                basic_string_ref<charT, traits> rhs) {
+  return lhs.compare(rhs) == 0;
+}
+template<typename charT, typename traits>
+bool operator==(basic_string_ref<charT, traits> lhs,
+                typename __identity<basic_string_ref<charT, traits>>::type rhs) {
+  return lhs.compare(rhs) == 0;
+}
+template<typename charT, typename traits>
+bool operator==(typename __identity<basic_string_ref<charT, traits>>::type lhs,
+                basic_string_ref<charT, traits> rhs) {
+  return lhs.compare(rhs) == 0;
+}
+\end{codeblock}
+\exitexample
 
 \indexlibrary{\idxcode{basic_string_ref}!\idxcode{operator==}}%
 \indexlibrary{\idxcode{operator==}!\idxcode{basic_string_ref}}%
@@ -5248,20 +5271,31 @@ unsigned long long stoull(string_ref str, size_t *idx = 0, int base = 10);
 float stof(string_ref str, size_t *idx = 0);
 double stod(string_ref str, size_t *idx = 0);
 long double stold(string_ref str, size_t *idx = 0);
+
+int stoi(const char* str, size_t *idx = 0, int base = 10);
+long stol(const char* str, size_t *idx = 0, int base = 10);
+unsigned long stoul(const char* str, size_t *idx = 0, int base = 10);
+long long stoll(const char* str, size_t *idx = 0, int base = 10);
+unsigned long long stoull(const char* str, size_t *idx = 0, int base = 10);
+float stof(const char* str, size_t *idx = 0);
+double stod(const char* str, size_t *idx = 0);
+long double stold(const char* str, size_t *idx = 0);
 \end{itemdecl}
 
 \begin{itemdescr}
 \pnum
-Each function of the form
+Each function of the forms
 \begin{codeblock}
 rt fn(string_ref str, size_t *idx = 0, int base = 10);
+rt fn(const char* str, size_t *idx = 0, int base = 10);
 \end{codeblock}
 acts as if it were a call to \tcode{fn(string(str), idx, base)}.
 
 \pnum
-Each function of the form
+Each function of the forms
 \begin{codeblock}
 rt fn(string_ref str, size_t *idx = 0);
+rt fn(const char* str, size_t *idx = 0);
 \end{codeblock}
 acts as if it were a call to \tcode{fn(string(str), idx)}.
 
@@ -5374,20 +5408,31 @@ unsigned long long stoull(wstring_ref str, size_t *idx = 0, int base = 10);
 float stof(wstring_ref str, size_t *idx = 0);
 double stod(wstring_ref str, size_t *idx = 0);
 long double stold(wstring_ref str, size_t *idx = 0);
+
+int stoi(const wchar_t* str, size_t *idx = 0, int base = 10);
+long stol(const wchar_t* str, size_t *idx = 0, int base = 10);
+unsigned long stoul(const wchar_t* str, size_t *idx = 0, int base = 10);
+long long stoll(const wchar_t* str, size_t *idx = 0, int base = 10);
+unsigned long long stoull(const wchar_t* str, size_t *idx = 0, int base = 10);
+float stof(const wchar_t* str, size_t *idx = 0);
+double stod(const wchar_t* str, size_t *idx = 0);
+long double stold(const wchar_t* str, size_t *idx = 0);
 \end{itemdecl}
 
 \begin{itemdescr}
 \pnum
-Each function of the form
+Each function of the forms
 \begin{codeblock}
 rt fn(wstring_ref str, size_t *idx = 0, int base = 10);
+rt fn(const wchar_t* str, size_t *idx = 0, int base = 10);
 \end{codeblock}
 acts as if it were a call to \tcode{fn(wstring(str), idx, base)}.
 
 \pnum
-Each function of the form
+Each function of the forms
 \begin{codeblock}
 rt fn(wstring_ref str, size_t *idx = 0);
+rt fn(const wchar_t* str, size_t *idx = 0);
 \end{codeblock}
 acts as if it were a call to \tcode{fn(wstring(str), idx)}.
 

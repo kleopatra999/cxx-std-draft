@@ -228,9 +228,11 @@ except that:
 
 \begin{itemize}
 \item
-A member operator template
+Two member operator templates
 \tcode{operator()(const basic_string<C, T, A>\&, const basic_string<\brk{}C, T, A>\&)}
-is provided so that a locale may be used as a predicate argument to
+and
+\tcode{operator()(const basic_string_ref<C, T>\&, const basic_string_ref<\brk{}C, T>\&)}
+are provided so that a locale may be used as a predicate argument to
 the standard collections, to collate strings.
 \item
 Convenient global interfaces are provided for traditional
@@ -828,6 +830,9 @@ The result of the expression:
 template <class charT, class traits, class Allocator>
   bool operator()(const basic_string<charT,traits,Allocator>& s1,
                   const basic_string<charT,traits,Allocator>& s2) const;
+template <class charT, class traits>
+  bool operator()(const basic_string_ref<charT,traits>& s1,
+                  const basic_string_ref<charT,traits>& s2) const;
 \end{itemdecl}
 
 \begin{itemdescr}
@@ -1088,11 +1093,13 @@ template<class Codecvt, class Elem = wchar_t,
     wide_string from_bytes(char byte);
     wide_string from_bytes(const char *ptr);
     wide_string from_bytes(const byte_string& str);
+    wide_string from_bytes(const basic_string_ref<char>& str);
     wide_string from_bytes(const char *first, const char *last);
 
     byte_string to_bytes(Elem wchar);
     byte_string to_bytes(const Elem *wptr);
     byte_string to_bytes(const wide_string& wstr);
+    byte_string to_bytes(const basic_string_ref<Elem>& wstr);
     byte_string to_bytes(const Elem *first, const Elem *last);
 
     size_t converted() const;
@@ -1161,6 +1168,7 @@ size_t converted() const;
 wide_string from_bytes(char byte);
 wide_string from_bytes(const char *ptr);
 wide_string from_bytes(const byte_string& str);
+wide_string from_bytes(const basic_string_ref<char>& str);
 wide_string from_bytes(const char *first, const char *last);
 \end{itemdecl}
 
@@ -1169,8 +1177,8 @@ wide_string from_bytes(const char *first, const char *last);
 \effects
 The first member function shall convert the single-element sequence \tcode{byte} to a
 wide string. The second member function shall convert the null-terminated
-sequence beginning at \tcode{ptr} to a wide string. The third member function
-shall convert the sequence stored in \tcode{str} to a wide string. The fourth member
+sequence beginning at \tcode{ptr} to a wide string. The third and fourth member functions
+shall convert the sequence stored in \tcode{str} to a wide string. The fifth member
 function shall convert the sequence defined by the range \range{first}{last} to a
 wide string.
 
@@ -1231,6 +1239,7 @@ The type shall be a synonym for \tcode{Codecvt::state_type}.
 byte_string to_bytes(Elem wchar);
 byte_string to_bytes(const Elem *wptr);
 byte_string to_bytes(const wide_string& wstr);
+byte_string to_bytes(const basic_string_ref<Elem>& wstr);
 byte_string to_bytes(const Elem *first, const Elem *last);
 \end{itemdecl}
 
@@ -1239,8 +1248,8 @@ byte_string to_bytes(const Elem *first, const Elem *last);
 \effects
 The first member function shall convert the single-element sequence \tcode{wchar} to a byte string.
 The second member function shall convert the null-terminated sequence beginning at \tcode{wptr} to
-a byte string. The third member function shall convert the sequence stored in \tcode{wstr} to a
-byte string. The fourth member function shall convert the sequence defined by the
+a byte string. The third and fourth member functions shall convert the sequence stored in \tcode{wstr} to a
+byte string. The fifth member function shall convert the sequence defined by the
 range \range{first}{last} to a byte string.
 
 \pnum
