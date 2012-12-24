@@ -1040,15 +1040,15 @@ basic_string_ref(const charT* str);
 \begin{itemdescr}
 \pnum
 \requires
-\range{str}{str + traits::length(str)} must be a valid range.
+\range{str}{str + traits::length(str)} is a valid range.
 
 \pnum
 \effects
 Constructs a \tcode{basic_string_ref} referring to the same string as \tcode{str}, with the postconditions in Table~\ref{tab:string.ref.ctr.1}
 
 \begin{libefftabvalue}{\tcode{basic_string_ref(const charT*)} effects}{tab:string.ref.ctr.1}
-\tcode{data()}      &   \tcode{str}                                                            \\ \rowsep
-\tcode{size()}      &   0 if \tcode{str == nullptr} or \tcode{traits::length(str)} otherwise   \\ \rowsep
+\tcode{data()}      &   \tcode{str}                   \\ \rowsep
+\tcode{size()}      &   \tcode{traits::length(str)}   \\ \rowsep
 \end{libefftabvalue}
 
 \complexity
@@ -1063,7 +1063,7 @@ constexpr basic_string_ref(const charT* str, size_type len);
 \begin{itemdescr}
 \pnum
 \requires
-\range{str}{str + len} must be a valid range.
+\tcode{str} is not a null pointer and \range{str}{str + len} is a valid range.
 
 \effects
 Constructs a \tcode{basic_string_ref}, with the postconditions in Table~\ref{tab:string.ref.ctr.2}
@@ -1164,7 +1164,7 @@ size_type size() const noexcept;
 \begin{itemdescr}
 \pnum
 \returns
-A count of the number of char-like objects referred to by the string_ref.
+A count of the number of char-like objects referred to by the \tcode{string_ref}.
 
 \pnum
 \complexity constant time.
@@ -1286,8 +1286,8 @@ const charT* data() const noexcept;
 
 \begin{itemdescr}
 \pnum
-\returns A pointer \tcode{p} such that \tcode{p + i == \&operator[](i)} for each
-\tcode{i} in \range{0}{size()}.
+\returns A non-null pointer \tcode{p} such that \tcode{p + i == \&operator[](i)}
+for each \tcode{i} in \range{0}{size()}.
 
 \pnum
 \enternote Unlike \tcode{std::string::data()} and string literals,
