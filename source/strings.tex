@@ -919,6 +919,7 @@ namespace std {
     // types
     typedef charT value_type;
     typedef const charT* pointer;
+    typedef const charT* const_pointer;
     typedef const charT& reference;
     typedef const charT& const_reference;
     typedef @\impdef@ const_iterator; // See \ref{string.ref.iterators}
@@ -1010,7 +1011,7 @@ null terminated.} and returns \tcode{fx1(basic_string_ref(s))}.
 \pnum
 Each member function of the form
 \begin{codeblock}
-rt fx2(charT c);             // such as find()
+rt fx2(charT c);             // such as starts_with(), find()
 \end{codeblock}
 returns \tcode{fx2(basic_string_ref(\&c, 1))}.
 
@@ -1881,7 +1882,7 @@ namespace std {
                    const Allocator& a = Allocator());
     basic_string(initializer_list<charT>, const Allocator& = Allocator());
     explicit basic_string(basic_string_ref<charT, traits>,
-                          const Allocator& = Allocator());@\footnote{This conversion is explicit to avoid accidental \bigoh{N} operations on type mismatches.}@
+                          const Allocator& = Allocator());@\footnote{This conversion is explicit to avoid accidental \bigoh{N} operations on type mismatches.  It should be removed if a range constructor is added.}@
     basic_string(const basic_string&, const Allocator&);
     basic_string(basic_string&&, const Allocator&);
 
@@ -2062,6 +2063,12 @@ namespace std {
                 const charT* s) const;
     int compare(size_type pos1, size_type n1,
                 const charT* s, size_type n2) const;
+    bool starts_with(basic_string_ref<charT, traits> s) const noexcept;
+    bool starts_with(charT c) const noexcept;
+    bool starts_with(const charT* s) const noexcept;
+    bool ends_with(basic_string_ref<charT, traits> s) const noexcept;
+    bool ends_with(charT c) const noexcept;
+    bool ends_with(const charT* s) const noexcept;
   };
 }
 \end{codeblock}
@@ -2340,8 +2347,7 @@ basic_string(initializer_list<charT> il, const Allocator& a = Allocator());
 
 \indexlibrary{\idxcode{basic_string}!constructor}%
 \begin{itemdecl}
-explicit basic_string(basic_string_ref<charT, traits> str, const Allocator& a = Allocator());\footnote{
-This constructor should be removed if a range constructor is added.}
+explicit basic_string(basic_string_ref<charT, traits> str, const Allocator& a = Allocator());
 \end{itemdecl}
 
 \begin{itemdescr}
@@ -4501,6 +4507,34 @@ int compare(size_type pos, size_type n1,
 \begin{itemdescr}
 \pnum
 \returns \tcode{basic_string(*this, pos, n1).compare(basic_string(s, n2))}.
+\end{itemdescr}
+
+\rSec3[string.starts.ends.with]{basic_string::starts_with and ends_with}
+
+\indexlibrary{\idxcode{basic_string}!\idxcode{starts_with}}%
+\indexlibrary{\idxcode{starts_with}!\idxcode{basic_string}}%
+\begin{itemdecl}
+bool starts_with(const basic_string_ref<charT, traits>& prefix) const noexcept;
+bool starts_with(charT prefix) const noexcept;
+bool starts_with(const charT* prefix) const noexcept;
+\end{itemdecl}
+
+\begin{itemdescr}
+\pnum
+\effects Equivalent to \tcode{basic_string_ref<charT, traits>(*this).starts_with(prefix)}
+\end{itemdescr}
+
+\indexlibrary{\idxcode{basic_string_ref}!\idxcode{ends_with}}%
+\indexlibrary{\idxcode{ends_with}!\idxcode{basic_string_ref}}%
+\begin{itemdecl}
+bool ends_with(const basic_string_ref<charT, traits>& suffix) const noexcept;
+bool ends_with(charT suffix) const noexcept;
+bool ends_with(const charT* suffix) const noexcept;
+\end{itemdecl}
+
+\begin{itemdescr}
+\pnum
+\effects Equivalent to \tcode{basic_string_ref<charT, traits>(*this).ends_with(suffix)}
 \end{itemdescr}
 
 \rSec2[string.nonmembers]{\tcode{basic_string} non-member functions}
