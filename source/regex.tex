@@ -2330,7 +2330,7 @@ template <class BiIter, class ST>
 \end{itemdecl}
 
 \begin{itemdescr}
-\pnum\returns  \tcode{rhs.compare(lhs) == 0}.
+\pnum\returns  \tcode{rhs.compare(basic_string_ref<typename iterator_traits<BiIter>::value_type>(lhs.data(), lhs.size())) == 0}.\footnote{This and the other comparison operators ignore the \tcode{basic_string_ref}'s traits.}
 \end{itemdescr}
 
 \indexlibrary{\idxcode{sub_match}!\idxcode{operator"!=}}%
@@ -2358,7 +2358,7 @@ template <class BiIter, class ST>
 \end{itemdecl}
 
 \begin{itemdescr}
-\pnum\returns  \tcode{rhs.compare(lhs) > 0}.
+\pnum\returns  \tcode{rhs.compare(basic_string_ref<typename iterator_traits<BiIter>::value_type>(lhs.data(), lhs.size())) > 0}.
 \end{itemdescr}
 
 \indexlibrary{\idxcode{sub_match}!\idxcode{operator>}}%
@@ -2413,7 +2413,7 @@ template <class BiIter, class ST>
 \end{itemdecl}
 
 \begin{itemdescr}
-\pnum\returns  \tcode{lhs.compare(rhs) == 0}.
+\pnum\returns  \tcode{lhs.compare(basic_string_ref<typename iterator_traits<BiIter>::value_type>(rhs.data(), rhs.size())) == 0}.
 \end{itemdescr}
 
 \indexlibrary{\idxcode{operator"!=}!\idxcode{sub_match}}%
@@ -2439,7 +2439,7 @@ template <class BiIter, class ST>
 \end{itemdecl}
 
 \begin{itemdescr}
-\pnum\returns  \tcode{lhs.compare(rhs) < 0}.
+\pnum\returns  \tcode{lhs.compare(basic_string_ref<typename iterator_traits<BiIter>::value_type>(rhs.data(), rhs.size())) < 0}.
 \end{itemdescr}
 
 \indexlibrary{\idxcode{operator>}!\idxcode{sub_match}}%
