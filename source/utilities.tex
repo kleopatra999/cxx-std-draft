@@ -2050,12 +2050,11 @@ positions to values determined from the corresponding characters in the string
 \tcode{M} is the smaller of \tcode{N} and \tcode{str.size()}.
 
 \pnum
-An element of the constructed string has value zero if the
-corresponding character in \tcode{str}, beginning at position
-\tcode{pos}, is \tcode{zero}. Otherwise, the element has the value 1.
-Character position \tcode{M - 1} corresponds to bit position
-zero.  Subsequent decreasing character positions correspond to
-increasing bit positions.
+An element of the constructed string has value zero if the corresponding
+character in \tcode{str} is \tcode{zero}. Otherwise, the element has the value
+1.  Character position \tcode{M - 1} corresponds to bit position zero.
+Subsequent decreasing character positions correspond to increasing bit
+positions.
 
 \pnum
 If \tcode{M < N}, remaining bit positions are initialized to zero.
@@ -2075,7 +2074,7 @@ bitset(const basic_string<charT, traits, Allocator>& str,
 
 \begin{itemdescr}
 \pnum
-\effects Constructs an object of class \tcode{bitset<N>} as if by
+\effects Equivalent to
 
 \begin{codeblock}
 bitset(basic_string_ref<charT, traits>(str).substr(pos, n),

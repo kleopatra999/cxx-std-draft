@@ -1004,16 +1004,14 @@ Each member function of the form
 \begin{codeblock}
 rt fx1(const charT* s);      // such as compare(), find()
 \end{codeblock}
-requires that \range{s}{s+traits::length(s)} is a valid
-range\footnote{Implementations are not required to handle arguments that are not
-null terminated.} and returns \tcode{fx1(basic_string_ref(s))}.
+is equivalent to \tcode{fx1(basic_string_ref(s))}.
 
 \pnum
 Each member function of the form
 \begin{codeblock}
 rt fx2(charT c);             // such as starts_with(), find()
 \end{codeblock}
-returns \tcode{fx2(basic_string_ref(\&c, 1))}.
+is equivalent to \tcode{fx2(basic_string_ref(\&c, 1))}.
 
 \rSec2[string.ref.cons]{\tcode{basic_string_ref} constructors and assignment operators}
 
@@ -1647,7 +1645,7 @@ traits>}.
 
 \begin{libtab2}{Additional \tcode{basic_string_ref} comparison overloads}
 {tab:string.ref.comparison.overloads}{ll}
-{Expression}{Returns}
+{Expression}{Equivalent to}
 \tcode{t \ == sp}  &  \tcode{basic_string_ref<charT, traits>(t) == sp} \\ \rowsep
 \tcode{sp == t}  &  \tcode{sp == basic_string_ref<charT, traits>(t)} \\ \rowsep
 \tcode{t \ != sp}  &  \tcode{basic_string_ref<charT, traits>(t) != sp} \\ \rowsep
@@ -1881,8 +1879,8 @@ namespace std {
       basic_string(InputIterator begin, InputIterator end,
                    const Allocator& a = Allocator());
     basic_string(initializer_list<charT>, const Allocator& = Allocator());
-    explicit basic_string(basic_string_ref<charT, traits>,
-                          const Allocator& = Allocator());@\footnote{This conversion is explicit to avoid accidental \bigoh{N} operations on type mismatches.  It should be removed if a range constructor is added.}@
+    explicit@\footnote{This conversion is explicit to avoid accidental \bigoh{N} operations on type mismatches.}@ basic_string(basic_string_ref<charT, traits>,
+                          const Allocator& = Allocator());
     basic_string(const basic_string&, const Allocator&);
     basic_string(basic_string&&, const Allocator&);
 
@@ -4509,7 +4507,7 @@ int compare(size_type pos, size_type n1,
 \returns \tcode{basic_string(*this, pos, n1).compare(basic_string(s, n2))}.
 \end{itemdescr}
 
-\rSec3[string.starts.ends.with]{basic_string::starts_with and ends_with}
+\rSec3[string.starts.ends.with]{\tcode{basic_string::starts_with} and \tcode{ends_with}}
 
 \indexlibrary{\idxcode{basic_string}!\idxcode{starts_with}}%
 \indexlibrary{\idxcode{starts_with}!\idxcode{basic_string}}%
@@ -5322,7 +5320,7 @@ Each function of the forms
 rt fn(string_ref str, size_t *idx = 0, int base = 10);
 rt fn(const char* str, size_t *idx = 0, int base = 10);
 \end{codeblock}
-acts as if it were a call to \tcode{fn(string(str), idx, base)}.
+is equivalent to \tcode{fn(string(str), idx, base)}.
 
 \pnum
 Each function of the forms
@@ -5330,7 +5328,7 @@ Each function of the forms
 rt fn(string_ref str, size_t *idx = 0);
 rt fn(const char* str, size_t *idx = 0);
 \end{codeblock}
-acts as if it were a call to \tcode{fn(string(str), idx)}.
+is equivalent to to \tcode{fn(string(str), idx)}.
 
 \end{itemdescr}
 
@@ -5459,7 +5457,7 @@ Each function of the forms
 rt fn(wstring_ref str, size_t *idx = 0, int base = 10);
 rt fn(const wchar_t* str, size_t *idx = 0, int base = 10);
 \end{codeblock}
-acts as if it were a call to \tcode{fn(wstring(str), idx, base)}.
+is equivalent to \tcode{fn(wstring(str), idx, base)}.
 
 \pnum
 Each function of the forms
@@ -5467,7 +5465,7 @@ Each function of the forms
 rt fn(wstring_ref str, size_t *idx = 0);
 rt fn(const wchar_t* str, size_t *idx = 0);
 \end{codeblock}
-acts as if it were a call to \tcode{fn(wstring(str), idx)}.
+is equivalent to \tcode{fn(wstring(str), idx)}.
 
 \end{itemdescr}
 
