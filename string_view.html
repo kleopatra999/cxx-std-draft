@@ -3,7 +3,7 @@
   <head>
     <meta content="text/html;charset=UTF-8" http-equiv="Content-Type"/>
     <meta charset="UTF-8"/>
-    <title>string_view: a non-owning reference to a string, revision 4</title>
+    <title>string_view: a non-owning reference to a string, revision 5</title>
 <style type="text/css">
 body {color: #000000; background-color: #FFFFFF;}
 
@@ -67,13 +67,13 @@ div.ednote {display: inline-block; margin-left: 1ex; border: thin solid #fb6;
 <body>
   <header>
     <div class="docinfo">
-      <p>ISO/IEC JTC1 SC22 WG21 N3685</p>
-      <p>Date: <time pubdate="">2013-05-03</time></p>
+      <p>ISO/IEC JTC1 SC22 WG21 N????</p>
+      <p>Date: <time pubdate="">2013-08-26</time></p>
       <address>
         <p>Jeffrey Yasskin &lt;<a href="mailto:jyasskin@google.com">jyasskin@google.com</a>&gt;</p>
       </address>
     </div>
-    <h1><code>string_view</code>: a non-owning reference to a string, revision 4</h1>
+    <h1><code>string_view</code>: a non-owning reference to a string, revision 5</h1>
   </header>
   <p><small><a href="#maincontent">Skip table of contents</a></small></p>
   <nav id="toc"></nav>
@@ -106,7 +106,7 @@ div.ednote {display: inline-block; margin-left: 1ex; border: thin solid #fb6;
     string-reference type to encapsulate this kind of argument. <a
     href="#basic.string.view"><code>string_view</code></a> is implicitly
     constructible from <code>const char*</code> and <code>std::string</code>. It
-    provides most of the <code>const</code> member operations from
+    provides the <code>const</code> member operations from
     <code>std::string</code> to ease conversion. This paper follows <a
     href="http://src.chromium.org/viewvc/chrome/trunk/src/base/strings/string_piece.h?view=markup">Chromium</a>
     and <a
@@ -136,7 +136,7 @@ div.ednote {display: inline-block; margin-left: 1ex; border: thin solid #fb6;
     in-place operations on non-null-terminated byte/character sequences:</p>
     <ul>
       <li><a href="#basic.string.hash">hash</a>, as requested by c++std-lib-31935</li>
-      <li><a href="#string.conversions">numeric conversions</a></li>
+      <li>In a future addition, numeric conversions</li>
     </ul>
   </section>
 
@@ -205,76 +205,6 @@ div.ednote {display: inline-block; margin-left: 1ex; border: thin solid #fb6;
   </section>
 
   <section>
-    <h2 id="lib-modifications">Modifications to the rest of the standard library</h2>
-    <p>This paper makes
-    <code>char_traits::</code>{<code>length</code>,<code>find</code>,<code>compare</code>}
-    <code>constexpr</code> so that <code>basic_string_view</code> can
-    be constructed from string literals at compile time and so that
-    <code>basic_string_view::</code>{<code>find</code>,<code>compare</code>,<code>operator==</code>,
-    etc.}  can be <code>constexpr</code>.  This implements the
-    proposed resolution for <a
-    href="http://cplusplus.github.com/LWG/lwg-active.html#2232">LWG
-    Issue 2232</a>.</p>
-
-    <p>An alternate way to get compile-time <code>string_view</code>s
-    would be to define a user-defined literal operator a'la <a
-    href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2012/n3468.pdf">N3468</a>.</p>
-
-    <p>When deciding which functions to add <code>basic_string_view</code>
-    overloads to, I followed the following rules:</p>
-    <ul>
-      <li>If the function already had overloads for <code>const char*</code> and
-      <code>basic_string</code>, I added a <code>basic_string_view</code>
-      overload.</li>
-
-      <li>If the function had a <code>basic_string</code> overload but not a
-      <code>const char*</code> overload, and <code>const char*</code> arguments
-      could not be passed with an implicit conversion (generally because
-      template argument deduction would fail), I added a
-      <code>basic_string_view</code> overload.</li>
-
-      <li>If the function had a <code>basic_string</code> overload but not a
-      <code>const char*</code> overload, and <code>const char*</code> arguments
-      <em>could</em> be passed with an implicit conversion, then I did not add a
-      <code>basic_string_view</code> overload, on the theory that copies are
-      already expected and cheap enough, and because adding a
-      <code>basic_string_view</code> overload would require also adding a
-      <code>const char*</code> overload to avoid breaking user code.</li>
-    </ul>
-
-    <p>I didn't add <code>basic_string_view</code> overloads to a few functions
-    where this would be hard to implement:</p>
-
-    <ul>
-      <li>The locale <code>_byname</code> facets are implemented on Unix by forwarding
-      to a C library function that takes a <code>'\0'</code>-terminated string,
-      with no option to pass a length.  Since accepting a
-      <code>string_view</code> would require a copy regardless, users may as well
-      pass a <code>string</code>.</li>
-
-      <li>Several locale facet methods take <code>basic_string</code>, and
-      forward the argument on to a virtual method. Defining a version taking
-      <code>basic_string_view</code>, even with a default implementation
-      forwarding to the <code>string</code> version, would break user subclasses
-      because of a common compiler warning that fires when a virtual method is
-      hidden.  This propagates to the <code>put_money</code> I/O manipulator.</li>
-    </ul>
-
-    <p>I also omitted <code>operator+(basic_string, basic_string_view)</code>
-    because LLVM returns a lightweight object from this overload and only
-    performs the concatenation lazily.  If we define this overload, we'll have a
-    hard time introducing that lightweight concatenation later.</p>
-
-    <p id="no-fix-2216">Following the <code>basic_string</code> and <code>const
-    char*</code> overloads of <code>regex_replace()</code>, the
-    <code>string_view</code> overloads don't let the user specify an explicit
-    allocator.  This should be fixed with the resolution to <a
-    href="http://cplusplus.github.com/LWG/lwg-active.html#2216">issue 2216</a>.
-    I believe you have enough to read in this paper as it is and that it would
-    be unwise to jam a fix into here.</p>
-  </section>
-
-  <section>
     <h2 id="why-not">Why not change &lt;my-pet-feature>?</h2>
     <p>I haven't taken every suggestion to change <code>string_view</code>.  This
     section explains the rationales.</p>
@@ -339,6 +269,20 @@ return iter == haystack.<strong>r</strong>end() ? std::string::npos : iter<stron
       <code>find_last_of</code>, <code>find_first_not_of</code>, and
       <code>find_last_not_of</code> get progressively worse to handle even in an
       iterator-based function.</p>
+
+      <p>Discussion in Bristol concluded that <code>string_view</code> should
+      include all of the const signatures from <code>string</code>.</p>
+
+      <table class="strawpoll">
+        <caption>Bristol straw poll on "Should we keep the pos/n arguments to find, etc?"</caption>
+        <tr><td>SF</td><td>WF</td><td>N</td><td>WA</td><td>SA</td></tr>
+        <tr><td>5</td><td>4</td><td>1</td><td>2</td><td>0</td></tr>
+      </table>
+      <table class="strawpoll">
+        <caption>Bristol straw poll on "Should we keep the copy() method?"</caption>
+        <tr><td>SF</td><td>WF</td><td>N</td><td>WA</td><td>SA</td></tr>
+        <tr><td>4</td><td>2</td><td>2</td><td>3</td><td>2</td></tr>
+      </table>
     </section>
 
     <section>
@@ -370,10 +314,16 @@ return iter == haystack.<strong>r</strong>end() ? std::string::npos : iter<stron
       <h3 id="operator-bool">Add an <code>explicit operator bool</code></h3>
 
       <p>This would be an abbreviation for <code>!empty()</code>, usable for
-      initialization in <code>if</code> statements.  I didn't add this because
-      it would be inconsistent with the rest of the containers library, but if
-      another proposal adds it to the rest of the containers, that proposal
-      should also add it to <code>string_view</code>.</p>
+      initialization in <code>if</code> statements.  <a
+      href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2013/n3509.htm">N3509</a>
+      came to SG9 in Bristol and was not accepted.</p>
+
+      <table class="strawpoll">
+        <caption>Bristol straw poll on "Do we want to pursue [N3509]?"</caption>
+        <tr><td>SF</td><td>WF</td><td>WA</td><td>SA</td></tr>
+        <tr><td>0</td><td>1</td><td>3</td><td>5</td></tr>
+      </table>
+
     </section>
 
     <section>
@@ -502,7 +452,14 @@ string_view str(space);</code></pre>
 
   <section>
     <h2 id="revision-history">Paper revision history</h2>
-    <p>This paper updates N3609 with the results of the <a
+    <p>This paper updates N3685 by removing other standard library updates so
+    that the core <code>string_view</code> class can be accepted independently.
+    I've also fixed some bugs in the <code>pos</code> and <code>n</code> parameters,
+    added <code>copy()</code> back, and removed the assumption that <a
+    href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2013/n3687.html#2232">LWG
+    issue 2232</a> will be fixed.</p>
+
+    <p><a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2013/n3685.html">N3685</a> updated N3609 with the results of the <a
     href="http://wiki.edg.com/twiki/bin/view/Wg21bristol/LibraryEvolutionWorkingGroup#N3609">LEWG
     discussion in Bristol</a>.  Significant changes include:</p>
     <ul>
@@ -535,6 +492,8 @@ string_view str(space);</code></pre>
   <hr/>
 
   <section class="wording">
+    <h2 id="wording">Wording for TS2</h2>
+
     <!--<p>Wording changes are being maintained at <a
     href="https://github.com/google/cxx-std-draft/compare/string-ref">https://github.com/google/cxx-std-draft/compare/string-ref</a>
     and a snapshot of the changes is copied below.  A very early implementation
@@ -542,21 +501,22 @@ string_view str(space);</code></pre>
     href="https://github.com/google/libcxx/compare/string-ref">https://github.com/google/libcxx/compare/string-ref</a>.
     Patches and pull requests are welcome against both.</p>-->
 
-    <h2 id="wording-ts">Wording for TS2</h2>
-
     <h3 id="strings">Clause x, string_view</h3>
 
-    <p>The class template basic_string_view describes objects that can refer to a
-    constant sequence of arbitrary char-like objects with the first element of
+    <p>The class template <code>basic_string_view</code> describes objects that
+    can refer to a constant sequence of arbitrary <code>char</code>-like objects
+    with the first element of
     the sequence at position zero. In the rest of this Clause, the type of the
-    char-like objects held in a basic_string_view object is designated by
-    charT.</p>
+    <code>char</code>-like objects held in a <code>basic_string_view</code>
+    object is designated by <code>charT</code>.</p>
 
-    <p>[Note: The library provides implicit conversions from const charT* and
-    std::basic_string&lt;charT, ...> to std::basic_string_view&lt;charT, ...> so
-    that user code can accept just std::basic_string_view&lt;charT> as a
+    <p>[Note: The library provides implicit conversions from <code>const
+    charT*</code> and <code>std::basic_string&lt;charT, ...></code> to
+    <code>std::basic_string_view&lt;charT, ...></code> so that user code can
+    accept just <code>std::basic_string_view&lt;charT></code> as a non-templated
     parameter wherever a sequence of characters is expected. User-defined types
-    should define their own implicit conversions to std::basic_string_view in
+    should define their own implicit conversions to
+    <code>std::basic_string_view</code> in
     order to interoperate with these functions. — end note ]</p>
 
     <p>The complexity of member functions is O(1) unless otherwise
@@ -601,52 +561,7 @@ string_view str(space);</code></pre>
   typedef basic_string_view&lt;char> string_view;
   typedef basic_string_view&lt;char16_t> u16string_view;
   typedef basic_string_view&lt;char32_t> u32string_view;
-  typedef basic_string_view&lt;wchar_t> wstring_view;</code></pre>
-
-    <div class="ednote">
-      <p>It would be nice to remove the <code>string</code> overloads for the
-      numeric conversion functions, but that could break code that relies on an
-      implicit conversion to string.  Instead, we need to add <code>const
-      char*</code> overloads to avoid ambiguity.</p>
-
-      <p>I'd also like to add <code>optional&lt;T>
-      sto<var>x</var>_consume(string_view&, int base=10)</code> if/when
-      <code>optional</code> becomes available.</p>
-    </div>
-
-<pre><code>  int stoi(string_view str, size_t* idx = 0, int base = 10);
-  int stoi(const char* str, size_t* idx = 0, int base = 10);
-  long stol(string_view str, size_t* idx = 0, int base = 10);
-  long stol(const char* str, size_t* idx = 0, int base = 10);
-  unsigned long stoul(string_view str, size_t* idx = 0, int base = 10);
-  unsigned long stoul(const char* str, size_t* idx = 0, int base = 10);
-  long long stoll(string_view str, size_t* idx = 0, int base = 10);
-  long long stoll(const char* str, size_t* idx = 0, int base = 10);
-  unsigned long long stoull(string_view str, size_t* idx = 0, int base = 10);
-  unsigned long long stoull(const char* str, size_t* idx = 0, int base = 10);
-  float stof(string_view str, size_t* idx = 0);
-  float stof(const char* str, size_t* idx = 0);
-  double stod(string_view str, size_t* idx = 0);
-  double stod(const char* str, size_t* idx = 0);
-  long double stold(string_view str, size_t* idx = 0);
-  long double stold(const char* str, size_t* idx = 0);
-
-  int stoi(wstring_view str, size_t* idx = 0, int base = 10);
-  int stoi(const wchar_t* str, size_t* idx = 0, int base = 10);
-  long stol(wstring_view str, size_t* idx = 0, int base = 10);
-  long stol(const wchar_t* str, size_t* idx = 0, int base = 10);
-  unsigned long stoul(wstring_view str, size_t* idx = 0, int base = 10);
-  unsigned long stoul(const wchar_t* str, size_t* idx = 0, int base = 10);
-  long long stoll(wstring_view str, size_t* idx = 0, int base = 10);
-  long long stoll(const wchar_t* str, size_t* idx = 0, int base = 10);
-  unsigned long long stoull(wstring_view str, size_t* idx = 0, int base = 10);
-  unsigned long long stoull(const wchar_t* str, size_t* idx = 0, int base = 10);
-  float stof(wstring_view str, size_t* idx = 0);
-  float stof(const wchar_t* str, size_t* idx = 0);
-  double stod(wstring_view str, size_t* idx = 0);
-  double stod(const wchar_t* str, size_t* idx = 0);
-  long double stold(wstring_view str, size_t* idx = 0);
-  long double stold(const wchar_t* str, size_t* idx = 0);
+  typedef basic_string_view&lt;wchar_t> wstring_view;
 
   template &lt;> struct hash&lt;string_view>;
   template &lt;> struct hash&lt;u16string_view>;
@@ -677,8 +592,9 @@ string_view str(space);</code></pre>
     basic_string_view& operator=(const basic_string_view&) noexcept = default;
     template&lt;typename Allocator>
     basic_string_view(const basic_string&lt;charT, traits, Allocator>& str);
-    constexpr basic_string_view(const charT* str);
-    constexpr basic_string_view(const charT* str, size_type len);</code></pre>
+    basic_string_view(const charT* str);</code></pre>
+    <div class="ednote"><p>Not constexpr because that would rely on potentially-controversial changes to char_traits::length().</p></div>
+<pre><code>    constexpr basic_string_view(const charT* str, size_type len);</code></pre>
     <div class="ednote"><p>No initializer_list constructor because [dcl.init.list]p6 says it would likely store a dangling reference into the string_view.</p></div>
 
 <pre><code>    // [string.view.iterators], iterators
@@ -714,15 +630,17 @@ string_view str(space);</code></pre>
     template&lt;typename Allocator>
     explicit operator basic_string&lt;charT, traits, Allocator>() const;
 
-    constexpr basic_string_view substr(size_type pos, size_type n=npos) const;
-    constexpr int compare(basic_string_view s) const noexcept;
-    constexpr int compare(size_type pos1, size_type n1, basic_string_view s) const noexcept;
-    constexpr int compare(size_type pos1, size_type n1,
-                          basic_string_view s, size_type pos2, size_type n2) const noexcept;
-    constexpr int compare(const charT* s) const noexcept;
-    constexpr int compare(size_type pos1, size_type n1, const charT* s) const noexcept;
-    constexpr int compare(size_type pos1, size_type n1,
-                          const charT* s, size_type n2) const noexcept;
+    size_type copy(charT* s, size_type n, size_type pos = 0) const;
+
+    constexpr basic_string_view substr(size_type pos=0, size_type n=npos) const;
+    int compare(basic_string_view s) const noexcept;
+    int compare(size_type pos1, size_type n1, basic_string_view s) const noexcept;
+    int compare(size_type pos1, size_type n1,
+                basic_string_view s, size_type pos2, size_type n2) const noexcept;
+    int compare(const charT* s) const noexcept;
+    int compare(size_type pos1, size_type n1, const charT* s) const noexcept;
+    int compare(size_type pos1, size_type n1,
+                const charT* s, size_type n2) const noexcept;
     size_type find(basic_string_view s, size_type pos=0) const noexcept;
     size_type find(charT c, size_type pos=0) const noexcept;
     size_type find(const charT* s, size_type pos, size_type n) const noexcept;
@@ -744,18 +662,18 @@ string_view str(space);</code></pre>
     size_type find_first_not_of(const charT* s, size_type pos, size_type n) const noexcept;
     size_type find_first_not_of(const charT* s, size_type pos=0) const noexcept;
     size_type find_last_not_of(basic_string_view s) const noexcept;
-    size_type find_last_not_of(charT c) const noexcept;
+    size_type find_last_not_of(charT c, size_type pos=0) const noexcept;
     size_type find_last_not_of(const charT* s, size_type pos, size_type n) const noexcept;
-    size_type find_last_not_of(const charT* s) const noexcept;
+    size_type find_last_not_of(const charT* s, size_type pos=0) const noexcept;
   };
 }</code></pre>
 
     <p>Each member function of the form</p>
-    <pre><code>rt fx1(const charT* s[, size_type pos[, size_type n]]); // such as compare(), find()</code></pre>
-    <p>is equivalent to <code>fx1(basic_string_view(s)[, pos[, n]])</code>.</p>
+    <pre><code>rt fx1(const charT* s[, size_type pos[, size_type n]]); // find() variants</code></pre>
+    <p>is equivalent to <code>fx1(basic_string_view(s[, n])[, pos])</code>.</p>
 
     <p>Each member function of the form</p>
-    <pre><code>rt fx2(charT c, size_type pos); // such as find()</code></pre>
+    <pre><code>rt fx2(charT c, size_type pos); // find() variants</code></pre>
     <p>is equivalent to <code>fx2(basic_string_view(&c, 1), pos)</code>.</p>
 
     <h4>Add a subclause "x.1 basic_string_view constructors and assignment operators  [string.view.cons]"</h4>
@@ -778,7 +696,7 @@ basic_string_view(const basic_string&lt;charT, traits, Allocator>& str);</code><
       </table>
     </div>
 
-    <pre><code>constexpr basic_string_view(const charT* str);</code></pre>
+    <pre><code>basic_string_view(const charT* str);</code></pre>
     <div class="attributes">
       <p><i>Requires</i>: [str,str + traits::length(str)) is a valid range.</p>
       <p><i>Effects</i>: Constructs a basic_string_view referring to the same string as str, with the postconditions
@@ -914,11 +832,20 @@ const_reverse_iterator crend() const noexcept;</code></pre>
 explicit  // Footnote: This conversion is explicit to avoid accidental O(N) operations on type mismatches. --end footnote
 operator basic_string&lt;charT, traits, Allocator>() const;</code></pre>
     <div class="attributes">
-      <p><i>Effects</i>: Equivalent to <code>basic_string(str.begin(), str.end()).</code></p>
+      <p><i>Effects</i>: Equivalent to <code>basic_string&lt;charT, traits, Allocator>(str.begin(), str.end()).</code></p>
       <p>[ Note: Users who want to control the allocator instance should call <code>basic_string(str.begin(), str.end(), allocator)</code> directly. -- end note ]</p>
     </div>
 
-    <pre><code>basic_string_view substr(size_type pos, size_type n = npos) const;</code></pre>
+    <pre><code>size_type copy(charT* s, size_type n, size_type pos = 0) const;</code></pre>
+    <div class="attributes">
+      <p><i>Throws</i>: <code>out_of_range</code> if <code>pos > size()</code>.</p>
+      <p><i>Remarks</i>: Let <code><var>rlen</var></code> be the smaller of <code>n</code> and <code>size() - pos</code>.</p>
+      <p><i>Requires</i>: [<code>s</code>, <code>s+<var>rlen</var></code>) is a valid range.</p>
+      <p><i>Effects</i>: Equivalent to <code>std::copy_n(begin() + pos, <var>rlen</var>, s).</code></p>
+      <p><i>Returns</i>: <code><var>rlen</var></code>.</p>
+    </div>
+
+    <pre><code>basic_string_view substr(size_type pos = 0, size_type n = npos) const;</code></pre>
     <div class="attributes">
       <p><i>Throws</i>: out_of_range if pos > size().</p>
       <p><i>Effects</i>: Determines the effective length rlen of the string to reference as the smaller of n and size() - pos.</p>
@@ -943,14 +870,14 @@ operator basic_string&lt;charT, traits, Allocator>() const;</code></pre>
     <p class="attribute"><i>Effects</i>: Equivalent to substr(pos1, n1).compare(str).</p>
 
     <pre><code>int compare(size_type pos1, size_type n1, const basic_string_view& str,
-                           size_type pos2, size_type n2) const noexcept;</code></pre>
+            size_type pos2, size_type n2) const noexcept;</code></pre>
     <p class="attribute"><i>Effects</i>: Equivalent to substr(pos1, n1).compare(str.substr(pos2, n2)).</p>
-    <pre><code>int compare(size_type pos1, size_type n1, const charT* s) const noexcept;</code></pre>
-    <p class="attribute"><i>Effects</i>: Equivalent to substr(pos1, n1).compare(s).</p>
+    <pre><code>int compare(const charT* s) const noexcept;</code></pre>
+    <p class="attribute"><i>Effects</i>: Equivalent to compare(basic_string_view(s)).</p>
     <pre><code>int compare(size_type pos1, size_type n1, const charT* s) const noexcept;</code></pre>
     <p class="attribute"><i>Effects</i>: Equivalent to substr(pos1, n1).compare(basic_string_view(s)).</p>
     <pre><code>int compare(size_type pos1, size_type n1,
-                           const charT* s, size_type n2) const noexcept;</code></pre>
+            const charT* s, size_type n2) const noexcept;</code></pre>
     <p class="attribute"><i>Effects</i>: Equivalent to substr(pos1, n1).compare(basic_string_view(s, n2)).</p>
 
     <h5>Add a sub-subclause "x.6.1 Searching basic_string_view [string.view.find]"</h5>
@@ -959,56 +886,62 @@ operator basic_string&lt;charT, traits, Allocator>() const;</code></pre>
     argument.size()) at worst, although implementations are encouraged to do
     better.</p>
 
-    <pre><code>size_type find(const basic_string_view& str) const noexcept;</code></pre>
+    <pre><code>size_type find(const basic_string_view& str, size_type pos=0) const noexcept;</code></pre>
     <div class="attributes">
-      <p><i>Effects</i>: Determines the lowest position xpos, if possible, such that both of the following conditions obtain:</p>
-      <ul><li>xpos + str.size() <= size();</li>
+      <p><i>Effects</i>: Determines the lowest position xpos, if possible, such that the following conditions obtain:</p>
+      <ul><li>pos &lt;= xpos</li>
+      <li>xpos + str.size() &lt;= size();</li>
       <li>traits::eq(at(xpos+I), str.at(I)) for all elements I of the string referenced by str.</li>
       </ul>
       <p><i>Returns</i>: xpos if the function can determine such a value for xpos. Otherwise, returns npos.</p>
       <p><i>Remarks</i>: Uses traits::eq().</p>
     </div>
 
-    <pre><code>size_type rfind(const basic_string_view& str) const noexcept;</code></pre>
+    <pre><code>size_type rfind(const basic_string_view& str, size_type pos=0) const noexcept;</code></pre>
     <div class="attributes">
-      <p><i>Effects</i>: Determines the highest position xpos, if possible, such that both of the following conditions obtain:</p>
-      <ul><li>xpos + str.size() <= size();</li>
+      <p><i>Effects</i>: Determines the highest position xpos, if possible, such that the following conditions obtain:</p>
+      <ul><li>xpos &lt;= pos</li>
+      <li>xpos + str.size() &lt;= size();</li>
       <li>traits::eq(at(xpos+I), str.at(I)) for all elements I of the string referenced by str.</li></ul>
       <p><i>Returns</i>: xpos if the function can determine such a value for xpos. Otherwise, returns npos.</p>
       <p><i>Remarks</i>: Uses traits::eq().</p>
     </div>
 
-    <pre><code>size_type find_first_of(const basic_string_view& str) const noexcept;</code></pre>
+    <pre><code>size_type find_first_of(const basic_string_view& str, size_type pos=0) const noexcept;</code></pre>
     <div class="attributes">
-      <p><i>Effects</i>: Determines the lowest position xpos, if possible, such that both of the following conditions obtain:</p>
-      <ul><li>xpos &lt; size();</li>
+      <p><i>Effects</i>: Determines the lowest position xpos, if possible, such that the following conditions obtain:</p>
+      <ul><li>pos &lt;= xpos</li>
+      <li>xpos &lt; size();</li>
       <li>traits::eq(at(xpos), str.at(I)) for some element I of the string referenced by str.</li></ul>
       <p><i>Returns</i>: xpos if the function can determine such a value for xpos. Otherwise, returns npos.</p>
       <p><i>Remarks</i>: Uses traits::eq().</p>
     </div>
 
-    <pre><code>size_type find_last_of(const basic_string_view& str) const noexcept;</code></pre>
+    <pre><code>size_type find_last_of(const basic_string_view& str, size_type pos=0) const noexcept;</code></pre>
     <div class="attributes">
-      <p><i>Effects</i>: Determines the highest position xpos, if possible, such that both of the following conditions obtain:</p>
-      <ul><li>xpos &lt; size();</li>
+      <p><i>Effects</i>: Determines the highest position xpos, if possible, such that the following conditions obtain:</p>
+      <ul><li>xpos &lt;= pos</li>
+      <li>xpos &lt; size();</li>
       <li>traits::eq(at(xpos), str.at(I)) for some element I of the string referenced by str.</li></ul>
       <p><i>Returns</i>: xpos if the function can determine such a value for xpos. Otherwise, returns npos.</p>
       <p><i>Remarks</i>: Uses traits::eq().</p>
     </div>
 
-    <pre><code>size_type find_first_not_of(const basic_string_view& str) const noexcept;</code></pre>
+    <pre><code>size_type find_first_not_of(const basic_string_view& str, size_type pos=0) const noexcept;</code></pre>
     <div class="attributes">
-      <p><i>Effects</i>: Determines the lowest position xpos, if possible, such that both of the following conditions obtain:</p>
-      <ul><li>xpos &lt; size();</li>
+      <p><i>Effects</i>: Determines the lowest position xpos, if possible, such that the following conditions obtain:</p>
+      <ul><li>pos &lt;= xpos</li>
+      <li>xpos &lt; size();</li>
       <li>traits::eq(at(xpos), str.at(I)) for no element I of the string referenced by str.</li></ul>
       <p><i>Returns</i>: xpos if the function can determine such a value for xpos. Otherwise, returns npos.</p>
       <p><i>Remarks</i>: Uses traits::eq().</p>
     </div>
 
-    <pre><code>size_type find_last_not_of(const basic_string_view& str) const noexcept;</code></pre>
+    <pre><code>size_type find_last_not_of(const basic_string_view& str, size_type pos=0) const noexcept;</code></pre>
     <div class="attributes">
-      <p><i>Effects</i>: Determines the highest position xpos, if possible, such that both of the following conditions obtain:</p>
-      <ul><li>xpos &lt; size();</li>
+      <p><i>Effects</i>: Determines the highest position xpos, if possible, such that the following conditions obtain:</p>
+      <ul><li>xpos &lt;= pos</li>
+      <li>xpos &lt; size();</li>
       <li>traits::eq(at(xpos), str.at(I)) for no element I of the string referenced by str.</li></ul>
       <p><i>Returns</i>: xpos if the function can determine such a value for xpos. Otherwise, returns npos.</p>
       <p><i>Remarks</i>: Uses traits::eq().</p>
@@ -1120,69 +1053,7 @@ operator basic_string&lt;charT, traits, Allocator>() const;</code></pre>
     </div>
 
 
-    <h4 id="string.conversions">Add a subclause "x.10 Numeric conversions [string.view.conversions]</h4>
-    <pre><code>int stoi(string_view str, size_t *idx = 0, int base = 10);
-long stol(string_view str, size_t *idx = 0, int base = 10);
-unsigned long stoul(string_view str, size_t *idx = 0, int base = 10);
-long long stoll(string_view str, size_t *idx = 0, int base = 10);
-unsigned long long stoull(string_view str, size_t *idx = 0, int base = 10);
-float stof(string_view str, size_t *idx = 0);
-double stod(string_view str, size_t *idx = 0);
-long double stold(string_view str, size_t *idx = 0);
-
-int stoi(const char* str, size_t *idx = 0, int base = 10);
-long stol(const char* str, size_t *idx = 0, int base = 10);
-unsigned long stoul(const char* str, size_t *idx = 0, int base = 10);
-long long stoll(const char* str, size_t *idx = 0, int base = 10);
-unsigned long long stoull(const char* str, size_t *idx = 0, int base = 10);
-float stof(const char* str, size_t *idx = 0);
-double stod(const char* str, size_t *idx = 0);
-long double stold(const char* str, size_t *idx = 0);</code></pre>
-
-    <div class="attributes">
-      <p>Each function of the forms</p>
-      <pre><code>  rt fn(string_view str, size_t *idx = 0, int base = 10);
-  rt fn(const char* str, size_t *idx = 0, int base = 10);</code></pre>
-      <p>is equivalent to <code>fn(string(str), idx, base)</code>.</p>
-
-      <p>Each function of the forms</p>
-      <pre><code>  rt fn(string_view str, size_t *idx = 0);
-  rt fn(const char* str, size_t *idx = 0);</code></pre>
-      <p>is equivalent to <code>fn(string(str), idx)</code>.</p>
-</div>
-
-<pre><code>int stoi(wstring_view str, size_t *idx = 0, int base = 10);
-long stol(wstring_view str, size_t *idx = 0, int base = 10);
-unsigned long stoul(wstring_view str, size_t *idx = 0, int base = 10);
-long long stoll(wstring_view str, size_t *idx = 0, int base = 10);
-unsigned long long stoull(wstring_view str, size_t *idx = 0, int base = 10);
-float stof(wstring_view str, size_t *idx = 0);
-double stod(wstring_view str, size_t *idx = 0);
-long double stold(wstring_view str, size_t *idx = 0);
-
-int stoi(const wchar_t* str, size_t *idx = 0, int base = 10);
-long stol(const wchar_t* str, size_t *idx = 0, int base = 10);
-unsigned long stoul(const wchar_t* str, size_t *idx = 0, int base = 10);
-long long stoll(const wchar_t* str, size_t *idx = 0, int base = 10);
-unsigned long long stoull(const wchar_t* str, size_t *idx = 0, int base = 10);
-float stof(const wchar_t* str, size_t *idx = 0);
-double stod(const wchar_t* str, size_t *idx = 0);
-long double stold(const wchar_t* str, size_t *idx = 0);</code></pre>
-
-    <div class="attributes">
-      <p>Each function of the forms</p>
-      <pre><code>  rt fn(wstring_view str, size_t *idx = 0, int base = 10);
-  rt fn(const wchar_t* str, size_t *idx = 0, int base = 10);</code></pre>
-      <p>is equivalent to <code>fn(wstring(str), idx, base)</code>.</p>
-
-      <p>Each function of the forms</p>
-      <pre><code>  rt fn(wstring_view str, size_t *idx = 0);
-  rt fn(const wchar_t* str, size_t *idx = 0);</code></pre>
-      <p>is equivalent to <code>fn(wstring(str), idx)</code>.</p>
-    </div>
-
-
-    <h4 id="basic.string.hash">Add a subclause "x.11 Hash support [string.view.hash]"</h4>
+    <h4 id="basic.string.hash">Add a subclause "x.10 Hash support [string.view.hash]"</h4>
 
     <pre><code>template &lt;> struct hash&lt;string_view>;
 template &lt;> struct hash&lt;u16string_view>;
@@ -1191,707 +1062,6 @@ template &lt;> struct hash&lt;wstring_view>;</code></pre>
     <p class="attribute"><i>Requires</i>: the template specializations shall
     meet the requirements of class template hash ([unord.hash]).</p>
 
-
-    <h2 id="wording-rest">Wording changes in the rest of the standard</h2>
-
-    <h3 id="library">Clause 17, Library introduction</h3>
-
-    <h4>Modify the note in [defns.component]</h4>
-    <p>For example, the class <del>template </del><ins>templates
-    </ins>basic_string <ins>and basic_string_view </ins>and the non-member
-    function templates that operate on strings are referred to as the
-    <dfn>string component</dfn>.</p>
-
-    <h3 id="utilities">Clause 20, General utilities library</h3>
-
-    <h4>Add a constructor to class bitset in [template.bitset]</h4>
-<pre><code>template&lt;class charT, class traits>
-  explicit bitset(
-    basic_string_view&lt;charT,traits> str,
-    charT zero = charT(’0’), charT one = charT(’1’));</code></pre>
-
-    <h4>Modify the constructor definitions in [bitset.cons]</h4>
-
-<pre><code>template &lt;class charT, class traits, class Allocator>
-explicit
-bitset(const basic_string&lt;charT, traits, Allocator>& str,
-       typename basic_string&lt;charT, traits, Allocator>::size_type pos = 0,
-       typename basic_string&lt;charT, traits, Allocator>::size_type n =
-         basic_string&lt;charT, traits, Allocator>::npos,
-       charT zero = charT(’0’), charT one = charT(’1’));</code></pre>
-<div class="attributes">
-<p><ins><i>Effects:</i> Equivalent to <code>bitset(basic_string_view&lt;charT, traits>(str).substr(pos, n),
-zero, one)</code></ins></p>
-</div>
-
-<pre><code><ins>template &lt;class charT, class traits>
-explicit
-bitset(basic_string_view&lt;charT, traits> str,
-       charT zero = charT(’0’), charT one = charT(’1’));</ins></code></pre>
-
-<div class="attributes">
-<p><del><i>Requires:</i> <code>pos &lt;= str.size()</code>.</del></p>
-
-<p><del><i>Throws:</i> <code>out_of_range</code> if <code>pos > str.size()</code>.</del></p>
-
-<p><del><i>Effects:</i> Determines the effective length <code><var>rlen</var></code> of the initializing string as the smaller of <code>n</code> and <code>str.size() - pos</code>.</del></p>
-
-<p><del>The function then throws </del><ins><i>Throws:</i>
-</ins><code>invalid_argument</code> if any of the <del>rlen </del>characters in
-<code>str</code> <del>beginning at position pos </del>is other than zero or one. The function
-uses <code>traits::eq()</code> to compare the character values.</p>
-
-<p><del>Otherwise, the </del><ins><i>Effects:</i> </ins>function
-constructs an object of class <code>bitset&lt;N></code>, initializing
-the first <code>M</code> bit positions to values determined from the
-corresponding characters in the string
-<code>str</code>. <code>M</code> is the smaller of <code>N</code> and
-<code><del>rlen</del><ins>str.size()</ins></code>.</p>
-
-<p>An element of the constructed string has value zero if the corresponding
-character in <code>str</code>, <del>beginning at position pos, </del>is <del>0
-</del><code>zero</code>. Otherwise, the element has the value 1. Character
-position <code>pos <del>+ M </del>- 1</code> corresponds to bit position
-zero. Subsequent decreasing character positions correspond to increasing bit
-positions.</p>
-
-<p>If <code>M &lt; N</code>, remaining bit positions are initialized to zero.</p>
-</div>
-
-<pre><code>template &lt;class charT>
-  explicit bitset(
-    const charT* str,
-    typename basic_string&lt;charT>::size_type n = basic_string&lt;charT>::npos,
-    charT zero = charT(’0’), charT one = charT(’1’));</code></pre>
-
-<div class="attributes">
-<p><i>Effects:</i> Constructs an object of class bitset&lt;N> as if by</p>
-<pre><code>bitset(
-  n == basic_string&lt;charT>::npos
-    ? basic_string<ins>_view</ins>&lt;charT>(str)
-    : basic_string<ins>_view</ins>&lt;charT>(str, n),
-  <del>0, n, </del>zero, one)</code></pre>
-</div>
-
-    <h3 id="strings">Clause 21, Strings library</h3>
-
-    <h4>Modify [char.traits.specializations.char], [char.traits.specializations.char16_t], [char.traits.specializations.char32_t], and [char.traits.specializations.wchar.t]</h4>
-
-    <div class="ednote"><p>This implements the proposed resolution
-    of <a href="http://cplusplus.github.com/LWG/lwg-active.html#2232">LWG issue
-    2232</a>.  I could take it out at the cost of making
-    <code>basic_string_view(const charT*)</code> and all of the comparison
-    operators and methods non-<code>constexpr</code>.</p></div>
-
-<pre><code>static <ins>constexpr </ins>int compare(const char_type* s1, const char_type* s2, size_t n);
-static <ins>constexpr </ins>size_t length(const char_type* s);
-static <ins>constexpr </ins>const char_type* find(const char_type* s, size_t n,
-                                       const char_type& a);</code></pre>
-
-    <h4 id="strings.string_view.header">Modify [string.classes]</h4>
-
-    <p>The header &lt;string> defines the basic_string class template for manipulating
-    varying-length sequences of char-like objects and four typedefs, string,
-    u16string, u32string, and wstring, that name the specializations
-    basic_string&lt;char>, basic_string&lt;char16_t>, basic_string&lt;char32_t>, and
-    basic_string&lt;wchar_t>, respectively.</p>
-
-    <p><ins>The header &lt;string_view> also defines the <code>basic_string_view</code> class
-    template for referring to constant sequences of char-like objects and four
-    typedefs, <code>string_view</code>, <code>u16string_view</code>,
-    <code>u32string_view</code>, and <code>wstring_view</code>, that name the
-    specializations <code>basic_string_view&lt;char></code>,
-    <code>basic_string_view&lt;char16_t></code>,
-    <code>basic_string_view&lt;char32_t></code>, and
-    <code>basic_string_view&lt;wchar_t></code>, respectively.</ins></p>
-
-    <h4>Add to the appropriate places within the class definition of [basic.string]</h4>
-<pre><code>    basic_string& operator=(basic_string_view&lt;charT, traits>);
-    basic_string& operator+=(basic_string_view&lt;charT, traits>);
-    basic_string& append(basic_string_view&lt;charT, traits>);
-    basic_string& assign(basic_string_view&lt;charT, traits>);
-    basic_string& insert(size_type pos1, basic_string_view&lt;charT, traits>);
-    basic_string& replace(const_iterator, const_iterator, basic_string_view&lt;charT, traits>);
-    operator basic_string_view&lt;charT, traits>() const noexcept;</code></pre>
-
-
-    <h3 id="localization">Clause 22, Localization library</h3>
-
-    <h4>Modify a note in [locale]</h4>
-    <p>[ Note: All locale semantics are accessed via use_facet&lt;> and has_facet&lt;>, except that:</p>
-    <ul>
-      <li><del>A member operator template </del><ins>Two member operator
-      templates </ins>operator()(const basic_string&lt;C, T, A>&, const
-      basic_string&lt;C, T, A>&) <del>is </del><ins>and operator()(const
-      basic_string_view&lt;C, T>&, const basic_string_view&lt;C, T>&) are
-      </ins>provided so that a locale may be used as a predicate argument to the
-      standard collections, to collate strings.</li>
-      <li>Convenient global interfaces are provided for traditional ctype
-      functions such as isdigit() and isspace(), so that given a locale object
-      loc a C++ program can call isspace(c,loc). (This eases upgrading existing
-      extractors (27.7.2.2).) — end note ]</li>
-    </ul>
-
-
-    <h4>Modify [locale.operators]</h4>
-<pre><code>template &lt;class charT, class traits, class Allocator>
-  bool operator()(const basic_string&lt;charT,traits,Allocator>& s1,
-                  const basic_string&lt;charT,traits,Allocator>& s2) const;
-<ins>template &lt;class charT, class traits>
-  bool operator()(const basic_string_view&lt;charT,traits>& s1,
-                  const basic_string_view&lt;charT,traits>& s2) const;</ins></code></pre>
-
-    <div class="attributes">
-      <p><i>Effects</i>: Compares two strings according to the collate&lt;charT> facet.</p>
-      <p><i>Remarks</i>: This member operator template (and therefore locale itself)
-      satisfies requirements for a comparator predicate template argument (Clause 25)
-      applied to strings.</p>
-      <p><i>Returns</i>: The result of the following expression:
-      <code>use_facet&lt; collate&lt;charT> >(*this).compare<wbr/>
-      (s1.data(), s1.data()+s1.size(), s2.data(), s2.data()+s2.size()) &lt; 0;</code></p>
-    </div>
-
-
-    <h4>Modify [conversions.string]</h4>
-<pre><code>namespace std {
-template&lt;class Codecvt, class Elem = wchar_t,
-    class Wide_alloc = std::allocator&lt;Elem>,
-    class Byte_alloc = std::allocator&lt;char> > class wstring_convert {
-    // ...
-    <ins>wide_string from_bytes(const basic_string_view&lt;char>& str);
-    byte_string to_bytes(const basic_string_view&lt;Elem>& wstr);</ins>
-    // ...
-  };
-}</code></pre>
-
-<pre><code>wide_string from_bytes(char byte);
-wide_string from_bytes(const char *ptr);
-wide_string from_bytes(const byte_string& str);
-<ins>wide_string from_bytes(const basic_string_view&lt;char>& str);</ins>
-wide_string from_bytes(const char *first, const char *last);</code></pre>
-
-     <p class="attribute"><i>Effects</i>: The first member function shall
-     convert the single-element sequence byte to a wide string.  The second
-     member function shall convert the null-terminated sequence beginning at ptr
-     to a wide string. The third <del>member function </del><ins>and fourth
-     member functions </ins>shall convert the sequence stored in str to a wide
-     string. The <del>fourth </del><ins>fifth </ins>member function shall
-     convert the sequence defined by the range [first,last) to a wide
-     string.</p>
-
-<pre><code>byte_string to_bytes(Elem wchar);
-byte_string to_bytes(const Elem *wptr);
-byte_string to_bytes(const wide_string& wstr);
-<ins>byte_string to_bytes(const basic_string_view&lt;Elem>& wstr);</ins>
-byte_string to_bytes(const Elem *first, const Elem *last);</code></pre>
-
-    <p class="attribute"><i>Effects</i>: The first member function shall convert
-    the single-element sequence wchar to a byte string.  The second member
-    function shall convert the null-terminated sequence beginning at wptr to a
-    byte string. The third <del>member function </del><ins>and fourth member
-    functions </ins>shall convert the sequence stored in wstr to a byte
-    string. The <del>fourth </del><ins>fifth </ins>member function shall convert
-    the sequence defined by the range [first,last) to a byte string.</p>
-
-
-    <h3 id="re">Clause 28, Regular expressions library</h3>
-
-    <h4>Add to the appropriate places within [re.syn]</h4>
-<pre><code>template &lt;class BiIter, class ST>
-  bool operator==(
-    basic_string_view&lt;
-      typename iterator_traits&lt;BiIter>::value_type, ST> lhs,
-    const sub_match&lt;BiIter>& rhs);
-template &lt;class BiIter, class ST>
-  bool operator!=(
-    basic_string_view&lt;
-      typename iterator_traits&lt;BiIter>::value_type, ST> lhs,
-    const sub_match&lt;BiIter>& rhs);
-template &lt;class BiIter, class ST>
-  bool operator&lt;(
-    basic_string_view&lt;
-      typename iterator_traits&lt;BiIter>::value_type, ST> lhs,
-    const sub_match&lt;BiIter>& rhs);
-template &lt;class BiIter, class ST>
-  bool operator>(
-    basic_string_view&lt;
-      typename iterator_traits&lt;BiIter>::value_type, ST> lhs,
-    const sub_match&lt;BiIter>& rhs);
-template &lt;class BiIter, class ST>
-  bool operator>=(
-    basic_string_view&lt;
-      typename iterator_traits&lt;BiIter>::value_type, ST> lhs,
-    const sub_match&lt;BiIter>& rhs);
-template &lt;class BiIter, class ST>
-  bool operator&lt;=(
-    basic_string_view&lt;
-      typename iterator_traits&lt;BiIter>::value_type, ST> lhs,
-    const sub_match&lt;BiIter>& rhs);
-
-template &lt;class BiIter, class ST>
-  bool operator==(
-    const sub_match&lt;BiIter>& lhs,
-    basic_string_view&lt;
-      typename iterator_traits&lt;BiIter>::value_type, ST> rhs);
-template &lt;class BiIter, class ST>
-bool operator!=(
-       const sub_match&lt;BiIter>& lhs,
-        basic_string_view&lt;
-          typename iterator_traits&lt;BiIter>::value_type, ST> rhs);
-template &lt;class BiIter, class ST>
-  bool operator&lt;(
-    const sub_match&lt;BiIter>& lhs,
-    basic_string_view&lt;
-      typename iterator_traits&lt;BiIter>::value_type, ST> rhs);
-template &lt;class BiIter, class ST>
-  bool operator>(
-    const sub_match&lt;BiIter>& lhs,
-    basic_string_view&lt;
-      typename iterator_traits&lt;BiIter>::value_type, ST> rhs);
-template &lt;class BiIter, class ST>
-  bool operator>=(
-    const sub_match&lt;BiIter>& lhs,
-    basic_string_view&lt;
-      typename iterator_traits&lt;BiIter>::value_type, ST> rhs);
-template &lt;class BiIter, class ST>
-  bool operator&lt;=(
-    const sub_match&lt;BiIter>& lhs,
-    basic_string_view&lt;
-      typename iterator_traits&lt;BiIter>::value_type, ST> rhs);
-
-template &lt;class ST, class Allocator, class charT, class traits>
-  bool regex_match(basic_string_view&lt;charT, ST> s,
-                   match_results&lt;
-                     typename basic_string_view&lt;charT, ST>::const_iterator,
-                     Allocator>& m,
-                   const basic_regex&lt;charT, traits>& e,
-                   regex_constants::match_flag_type flags =
-                     regex_constants::match_default);
-template &lt;class ST, class charT, class traits>
-  bool regex_match(basic_string_view&lt;charT, ST> s,
-                   const basic_regex&lt;charT, traits>& e,
-                   regex_constants::match_flag_type flags =
-                     regex_constants::match_default);
-
-template &lt;class ST, class charT, class traits>
-  bool regex_search(basic_string_view&lt;charT, ST> s,
-                    const basic_regex&lt;charT, traits>& e,
-                    regex_constants::match_flag_type flags =
-                      regex_constants::match_default);
-template &lt;class ST, class Allocator, class charT, class traits>
-  bool regex_search(basic_string_view&lt;charT, ST> s,
-                    match_results&lt;
-                      typename basic_string_view&lt;charT, ST>::const_iterator,
-                      Allocator>& m,
-                    const basic_regex&lt;charT, traits>& e,
-                    regex_constants::match_flag_type flags =
-                      regex_constants::match_default);
-
-template &lt;class OutputIterator, class BidirectionalIterator,
-    class traits, class charT, class ST>
-  OutputIterator
-  regex_replace(OutputIterator out,
-                BidirectionalIterator first, BidirectionalIterator last,
-                const basic_regex&lt;charT, traits>& e,
-                basic_string_view&lt;charT, ST> fmt,
-                regex_constants::match_flag_type flags =
-                  regex_constants::match_default);</code></pre>
-    <div class="ednote"><p>This wording <a href="#no-fix-2216">does not include
-    a fix</a> for <a
-    href="http://cplusplus.github.com/LWG/lwg-active.html#2216">LWG issue
-    2216</a>. That is, the new overloads always use the default
-    allocator.</p></div>
-<pre><code>template &lt;class traits, class charT, class ST, class FST>
-  basic_string&lt;charT, ST>
-  regex_replace(basic_string_view&lt;charT, ST> s,
-                const basic_regex&lt;charT, traits>& e,
-                basic_string_view&lt;charT, FST> fmt,
-                regex_constants::match_flag_type flags =
-                  regex_constants::match_default);
-template &lt;class traits, class charT, class ST>
-  basic_string&lt;charT, ST>
-  regex_replace(basic_string_view&lt;charT, ST> s,
-                const basic_regex&lt;charT, traits>& e,
-                const charT* fmt,
-                regex_constants::match_flag_type flags =
-                  regex_constants::match_default);
-template &lt;class traits, class charT, class ST>
-  basic_string&lt;charT>
-  regex_replace(const charT* s,
-                const basic_regex&lt;charT, traits>& e,
-                basic_string_view&lt;charT, ST> fmt,
-                regex_constants::match_flag_type flags =
-                  regex_constants::match_default);
-template &lt;class traits, class charT, class ST, class SA,
-          class FST>
-  basic_string&lt;charT, ST, SA>
-  regex_replace(const basic_string&lt;charT, ST, SA>& s,
-                const basic_regex&lt;charT, traits>& e,
-                basic_string_view&lt;charT, FST> fmt,
-                regex_constants::match_flag_type flags =
-                  regex_constants::match_default);
-template &lt;class traits, class charT, class ST,
-          class FST, class FSA>
-  basic_string&lt;charT, ST>
-  regex_replace(basic_string_view&lt;charT, ST> s,
-                const basic_regex&lt;charT, traits>& e,
-                const basic_string&lt;charT, FST, FSA>& fmt,
-                regex_constants::match_flag_type flags =
-                  regex_constants::match_default);</code></pre>
-
-
-    <h4>Add to the appropriate places within [re.regex]</h4>
-<pre><code>template &lt;class ST>
-  explicit basic_regex(basic_string_view&lt;charT, ST> p,
-                       flag_type f = regex_constants::ECMAScript);
-template &lt;class ST>
-  basic_regex& operator=(basic_string_view&lt;charT, ST> p);
-template &lt;class string_traits>
-  basic_regex& assign(basic_string_view&lt;charT, string_traits> s,
-                      flag_type f = regex_constants::ECMAScript);</code></pre>
-
-
-    <h4>Modify [re.regex.construct]</h4>
-<pre><code><ins>template &lt;class ST>
-  basic_regex(basic_string_view&lt;charT, ST> s,
-              flag_type f = regex_constants::ECMAScript);</ins>
-template &lt;class ST, class SA>
-basic_regex(const basic_string&lt;charT, ST, SA>& s,
-            flag_type f = regex_constants::ECMAScript);</code></pre>
-    <div class="attributes">
-      <p><i>Throws</i>: regex_error if s is not a valid regular expression.</p>
-      <p><i>Effects</i>: Constructs an object of class basic_regex; the object’s internal finite state machine is con- structed from the regular expression contained in the string s, and interpreted according to the flags specified in f.</p>
-      <p><i>Postconditions</i>: flags() returns f. mark_count() returns the number of marked sub-expressions within the expression.</p>
-    </div>
-
-
-    <h4>Modify [re.regex.assign]</h4>
-<pre><code><ins>template &lt;class ST>
-  basic_regex& operator=(basic_string_view&lt;charT, ST> p);</ins>
-template &lt;class ST, class SA>
-  basic_regex& operator=(const basic_string&lt;charT, ST, SA>& p);</code></pre>
-    <p class="attribute"><i>Effects</i>: returns assign(p).</p>
-
-<pre><code><ins>template &lt;class string_traits>
-  basic_regex& assign(basic_string_view&lt;charT, string_traits> s,
-                      flag_type f = regex_constants::ECMAScript);</ins>
-template &lt;class string_traits, class A>
-  basic_regex& assign(const basic_string&lt;charT, string_traits, A>& s,
-                      flag_type f = regex_constants::ECMAScript);</code></pre>
-    <div class="attributes">
-      <p><i>Throws</i>: regex_error if s is not a valid regular expression.</p>
-      <p><i>Returns</i>: *this.</p>
-      <p><i>Effects</i>: Assigns the regular expression contained in the string s, interpreted according the flags specified in f. If an exception is thrown, *this is unchanged.</p>
-      <p><i>Postconditions</i>: If no exception is thrown, flags() returns f and mark_count() returns the number of marked sub-expressions within the expression.</p>
-    </div>
-
-
-    <h4>Add to [re.submatch]</h4>
-    <pre><code>int compare(basic_string_view&lt;value_type> s) const;</code></pre>
-
-
-    <h4>Add to [re.submatch.members]</h4>
-    <pre><code>int compare(basic_string_view&lt;value_type> s) const;</code></pre>
-    <p class="attribute"><i>Returns</i>: str().compare(s).</p>
-
-
-    <h4>Add to [re.submatch.op]</h4>
-
-<pre><code>template &lt;class BiIter, class ST>
-  bool operator==(
-    basic_string_view&lt;
-      typename iterator_traits&lt;BiIter>::value_type, ST> lhs,
-    const sub_match&lt;BiIter>& rhs);</code></pre>
-    <p class="attributes"><i>Returns</i>: rhs.compare(basic_string_view&lt;typename iterator_traits&lt;BiIter>::value_type>(lhs.data(), lhs.size())) == 0.</p>
-    <p>[ Footnote: This and the other comparison operators ignore the basic_string_view's traits. -- end footnote]</p>
-
-<pre><code>template &lt;class BiIter, class ST>
-  bool operator!=(
-basic_string_view&lt;
-  typename iterator_traits&lt;BiIter>::value_type, ST> lhs,
-const sub_match&lt;BiIter>& rhs);</code></pre>
-    <p class="attribute"><i>Returns</i>: !(lhs == rhs).</p>
-
-<pre><code>template &lt;class BiIter, class ST>
-  bool operator&lt;(
-basic_string_view&lt;
-  typename iterator_traits&lt;BiIter>::value_type, ST> lhs,
-const sub_match&lt;BiIter>& rhs);</code></pre>
-    <p class="attribute"><i>Returns</i>: rhs.compare(basic_string_view&lt;typename iterator_traits&lt;BiIter>::value_type>(lhs.data(), lhs.size())) > 0.</p>
-
-<pre><code>template &lt;class BiIter, class ST>
-  bool operator>(
-basic_string_view&lt;
-  typename iterator_traits&lt;BiIter>::value_type, ST> lhs,
-const sub_match&lt;BiIter>& rhs);</code></pre>
-    <p class="attribute"><i>Returns</i>: rhs &lt; lhs.</p>
-
-<pre><code>template &lt;class BiIter, class ST>
-  bool operator>=(
-basic_string_view&lt;
-  typename iterator_traits&lt;BiIter>::value_type, ST> lhs,
-const sub_match&lt;BiIter>& rhs);</code></pre>
-    <p class="attribute"><i>Returns</i>: !(lhs &lt; rhs).</p>
-
-<pre><code>template &lt;class BiIter, class ST>
-  bool operator&lt;=(
-basic_string_view&lt;
-  typename iterator_traits&lt;BiIter>::value_type, ST> lhs,
-const sub_match&lt;BiIter>& rhs);</code></pre>
-    <p class="attribute"><i>Returns</i>: !(rhs &lt; lhs).</p>
-
-<pre><code>template &lt;class BiIter, class ST>
-  bool operator==(const sub_match&lt;BiIter>& lhs,
-             basic_string_view&lt;
-               typename iterator_traits&lt;BiIter>::value_type, ST> rhs);</code></pre>
-    <p class="attribute"><i>Returns</i>: lhs.compare(basic_string_view&lt;typename iterator_traits&lt;BiIter>::value_type>(rhs.data(), rhs.size())) == 0.</p>
-
-<pre><code>template &lt;class BiIter, class ST>
-  bool operator!=(const sub_match&lt;BiIter>& lhs,
-                  basic_string_view&lt;
-                    typename iterator_traits&lt;BiIter>::value_type, ST> rhs);</code></pre>
-    <p class="attribute"><i>Returns</i>: !(lhs == rhs).</p>
-
-<pre><code>template &lt;class BiIter, class ST>
-  bool operator&lt;(const sub_match&lt;BiIter>& lhs,
-            basic_string_view&lt;
-              typename iterator_traits&lt;BiIter>::value_type, ST> rhs);</code></pre>
-    <p class="attribute"><i>Returns</i>: lhs.compare(basic_string_view&lt;typename iterator_traits&lt;BiIter>::value_type>(rhs.data(), rhs.size())) &lt; 0.</p>
-
-<pre><code>template &lt;class BiIter, class ST>
-  bool operator>(const sub_match&lt;BiIter>& lhs,
-            basic_string_view&lt;
-              typename iterator_traits&lt;BiIter>::value_type, ST> rhs);</code></pre>
-    <p class="attribute"><i>Returns</i>: rhs &lt; lhs.</p>
-
-<pre><code>template &lt;class BiIter, class ST>
-  bool operator>=(const sub_match&lt;BiIter>& lhs,
-             basic_string_view&lt;
-               typename iterator_traits&lt;BiIter>::value_type, ST> rhs);</code></pre>
-    <p class="attribute"><i>Returns</i>: !(lhs &lt; rhs).</p>
-
-<pre><code>template &lt;class BiIter, class ST>
-  bool operator&lt;=(const sub_match&lt;BiIter>& lhs,
-             basic_string_view&lt;
-               typename iterator_traits&lt;BiIter>::value_type, ST> rhs);</code></pre>
-    <p class="attribute"><i>Returns</i>: !(rhs &lt; lhs).</p>
-
-
-    <h4>Add to the appropriate places within [re.results]</h4>
-<pre><code>template &lt;class OutputIter, class ST>
-       OutputIter
-       format(OutputIter out,
-              basic_string_view&lt;char_type, ST> fmt,
-              regex_constants::match_flag_type flags =
-                regex_constants::format_default) const;
-template &lt;class ST>
-      basic_string&lt;char_type, ST>
-      format(basic_string_view&lt;char_type, ST> fmt,
-             regex_constants::match_flag_type flags =
-               regex_constants::format_default) const;</code></pre>
-
-
-    <h4>Modify [re.results.form]</h4>
-<pre><code><ins>template &lt;class OutputIter, class ST>
-  OutputIter format(OutputIter out,
-                    basic_string_view&lt;char_type, ST> fmt,
-                    regex_constants::match_flag_type flags =
-                      regex_constants::format_default) const;</ins>
-template &lt;class OutputIter, class ST, class SA>
-  OutputIter format(OutputIter out,
-                    const basic_string&lt;char_type, ST, SA>& fmt,
-                    regex_constants::match_flag_type flags =
-                      regex_constants::format_default) const;</code></pre>
-    <p class="attribute"><i>Effects</i>: Equivalent to <code>return format(<wbr/>out,<wbr/> fmt.data(),<wbr/> fmt.data() + fmt.size(),<wbr/> flags)</code>.</p>
-
-<pre><code><ins>template &lt;class ST>
-  basic_string&lt;char_type, ST>
-  format(basic_string_view&lt;char_type, ST>& fmt,
-    regex_constants::match_flag_type flags =
-      regex_constants::format_default) const;</ins></code></pre>
-    <div class="attributes">
-      <p><ins><i>Requires</i>: <code>ready() == true</code>.</ins></p>
-      <p><ins><i>Effects</i>: Constructs an empty string <code>result</code> of
-      type <code>basic_string&lt;char_type, ST></code> and calls
-      <code>format(back_inserter(result), fmt, flags)</code>.</ins></p>
-      <p><ins><i>Returns</i>: <code>result</code>.</ins></p>
-    </div>
-
-
-    <h4>Modify [re.alg.match]</h4>
-<pre><code><ins>template &lt;class ST, class Allocator, class charT, class traits>
-  bool regex_match(basic_string_view&lt;charT, ST> s,
-                   match_results&lt;
-                     typename basic_string_view&lt;charT, ST>::const_iterator,
-                     Allocator>& m,
-                   const basic_regex&lt;charT, traits>& e,
-                   regex_constants::match_flag_type flags =
-                     regex_constants::match_default);</ins>
-template &lt;class ST, class SA, class Allocator, class charT, class traits>
-  bool regex_match(const basic_string&lt;charT, ST, SA>& s,
-                   match_results&lt;
-                     typename basic_string&lt;charT, ST, SA>::const_iterator,
-                     Allocator>& m,
-                   const basic_regex&lt;charT, traits>& e,
-                   regex_constants::match_flag_type flags =
-                     regex_constants::match_default);</code></pre>
-    <p class="attribute"><i>Returns</i>: regex_match(s.begin(), s.end(), m, e, flags).</p>
-
-
-<pre><code><ins>template &lt;class ST, class charT, class traits>
-  bool regex_match(basic_string_view&lt;charT, ST> s,
-                   const basic_regex&lt;charT, traits>& e,
-                   regex_constants::match_flag_type flags =
-                     regex_constants::match_default);</ins>
-template &lt;class ST, class SA, class charT, class traits>
-  bool regex_match(const basic_string&lt;charT, ST, SA>& s,
-                   const basic_regex&lt;charT, traits>& e,
-                   regex_constants::match_flag_type flags =
-                     regex_constants::match_default);</code></pre>
-
-    <p class="attribute"><i>Returns</i>: regex_match(s.begin(), s.end(), e, flags).</p>
-
-    <h4>Modify [re.alg.search]</h4>
-<pre><code><ins>template &lt;class ST, class Allocator, class charT, class traits>
-  bool regex_search(basic_string_view&lt;charT, ST> s,
-                    match_results&lt;
-                      typename basic_string_view&lt;charT, ST>::const_iterator,
-                      Allocator>& m,
-                    const basic_regex&lt;charT, traits>& e,
-                    regex_constants::match_flag_type flags =
-                      regex_constants::match_default);</ins>
-template &lt;class ST, class SA, class Allocator, class charT, class traits>
-  bool regex_search(const basic_string&lt;charT, ST, SA>& s,
-                    match_results&lt;
-                      typename basic_string&lt;charT, ST, SA>::const_iterator,
-                      Allocator>& m,
-                    const basic_regex&lt;charT, traits>& e,
-                    regex_constants::match_flag_type flags =
-                      regex_constants::match_default);</code></pre>
-    <p class="attribute"><i>Returns</i>: The result of <code>regex_search(s.begin(), s.end(), m, e, flags)</code>.</p>
-
-<pre><code><ins>template &lt;class ST, class SA, class charT, class traits>
-  bool regex_search(basic_string_view&lt;charT, ST>& s,
-                    const basic_regex&lt;charT, traits>& e,
-                    regex_constants::match_flag_type flags =
-                      regex_constants::match_default);</ins>
-template &lt;class ST, class SA, class charT, class traits>
-  bool regex_search(const basic_string&lt;charT, ST, SA>& s,
-                    const basic_regex&lt;charT, traits>& e,
-                    regex_constants::match_flag_type flags =
-                      regex_constants::match_default);</code></pre>
-    <p class="attribute"><i>Returns</i>: <code>regex_search(s.begin(), s.end(), e, flags)</code>.</p>
-
-    <h4>Modify [re.alg.replace]</h4>
-<pre><code>template &lt;class OutputIterator, class BidirectionalIterator,
-    class traits, class charT, class ST, class SA>
-  OutputIterator
-  regex_replace(OutputIterator out,
-                BidirectionalIterator first, BidirectionalIterator last,
-                const basic_regex&lt;charT, traits>& e,
-                const basic_string&lt;charT, ST, SA>& fmt,
-                regex_constants::match_flag_type flags =
-                  regex_constants::match_default);
-<ins>template &lt;class OutputIterator, class BidirectionalIterator,
-    class traits, class charT, class ST>
-  OutputIterator
-  regex_replace(OutputIterator out,
-                BidirectionalIterator first, BidirectionalIterator last,
-                const basic_regex&lt;charT, traits>& e,
-                basic_string_view&lt;charT, ST> fmt,
-                regex_constants::match_flag_type flags =
-                  regex_constants::match_default);</ins>
-template &lt;class OutputIterator, class BidirectionalIterator,
-    class traits, class charT>
-  OutputIterator
-  regex_replace(OutputIterator out,
-                BidirectionalIterator first, BidirectionalIterator last,
-                const basic_regex&lt;charT, traits>& e,
-                const charT* fmt,
-                regex_constants::match_flag_type flags =
-                  regex_constants::match_default);</code></pre>
-    <div class="attributes">
-      <p><i>Effects</i>: Constructs a regex_iterator object i as if by regex_iterator&lt;BidirectionalIterator, charT, traits> i(first, last, e, flags), and uses i to enumerate through all of the matches m of type match_results&lt;BidirectionalIterator> that occur within the sequence [first,last ). If no such matches are found and !(flags & regex_constants ::format_no_copy) then calls std::copy(first, last, out). If any matches are found then, for each such match, if !(flags & regex_constants::format_no_copy), calls std::copy(m.prefix().first, m.prefix().second, out), and then calls m.format(out, fmt, flags) for the first <del>form </del><ins>and second forms </ins>of the function and m.format(out, fmt, fmt + char_traits&lt;charT>::length(fmt), flags) for the <del> second</del><ins> third</ins>. Finally, if such a match is found and !(flags & regex_constants ::format_no_copy), calls std:: copy(last_m.suffix().first, last_m.suffix().second, out) where last_m is a copy of the last match found. If flags & regex_constants::format_first_only is non-zero then only the first match found is replaced.</p>
-      <p><i>Returns</i>: out.</p>
-    </div>
-
-<pre><code><ins>template &lt;class traits, class charT, class ST, class FST, class FSA>
-  basic_string&lt;charT, ST>
-  regex_replace(basic_string_view&lt;charT, ST> s,
-                const basic_regex&lt;charT, traits>& e,
-                const basic_string&lt;charT, FST, FSA>& fmt,
-                regex_constants::match_flag_type flags =
-                  regex_constants::match_default);
-template &lt;class traits, class charT, class ST, class FST>
-  basic_string&lt;charT, ST>
-  regex_replace(basic_string_view&lt;charT, ST> s,
-                const basic_regex&lt;charT, traits>& e,
-                basic_string_view&lt;charT, FST> fmt,
-                regex_constants::match_flag_type flags =
-                  regex_constants::match_default);
-template &lt;class traits, class charT, class ST>
-  basic_string&lt;charT, ST>
-  regex_replace(basic_string_view&lt;charT, ST> s,
-  const basic_regex&lt;charT, traits>& e,
-                const charT* fmt,
-                regex_constants::match_flag_type flags =
-                  regex_constants::match_default);</ins></code></pre>
-    <div class="attributes">
-      <p><ins><i>Effects</i>: Constructs an empty string result of type basic_string&lt;charT, ST> and calls regex_replace(back_inserter(result), s.begin(), s.end(), e, fmt, flags).</ins></p>
-      <p><ins><i>Returns</i>: result.</ins></p>
-    </div>
-
-<pre><code>template &lt;class traits, class charT, class ST, class SA, class FST, class FSA>
-  basic_string&lt;charT, ST, SA>
-  regex_replace(const basic_string&lt;charT, ST, SA>& s,
-                const basic_regex&lt;charT, traits>& e,
-                const basic_string&lt;charT, FST, FSA>& fmt,
-                regex_constants::match_flag_type flags =
-                  regex_constants::match_default);
-<ins>template &lt;class traits, class charT, class ST, class SA, class FST>
-  basic_string&lt;charT, ST, SA>
-  regex_replace(const basic_string&lt;charT, ST, SA>& s,
-                const basic_regex&lt;charT, traits>& e,
-                basic_string_view&lt;charT, FST> fmt,
-                regex_constants::match_flag_type flags =
-                  regex_constants::match_default);</ins>
-template &lt;class traits, class charT, class ST, class SA>
-basic_string&lt;charT, ST, SA>
-regex_replace(const basic_string&lt;charT, ST, SA>& s,
-              const basic_regex&lt;charT, traits>& e,
-              const charT* fmt,
-              regex_constants::match_flag_type flags =
-                regex_constants::match_default);</code></pre>
-    <div class="attributes">
-      <p><i>Effects</i>: Constructs an empty string result of type basic_string&lt;charT, ST, SA> and calls regex_replace(back_inserter(result), s.begin(), s.end(), e, fmt, flags).</p>
-      <p><i>Returns</i>: result.</p>
-    </div>
-
-<pre><code>template &lt;class traits, class charT, class ST, class SA>
-  basic_string&lt;charT>
-  regex_replace(const charT* s,
-                const basic_regex&lt;charT, traits>& e,
-                const basic_string&lt;charT, ST, SA>& fmt,
-                regex_constants::match_flag_type flags =
-                  regex_constants::match_default);
-<ins>template &lt;class traits, class charT, class ST>
-  basic_string&lt;charT>
-  regex_replace(const charT* s,
-                const basic_regex&lt;charT, traits>& e,
-                basic_string_view&lt;charT, ST> fmt,
-                   regex_constants::match_flag_type flags =
-                     regex_constants::match_default);</ins>
-template &lt;class traits, class charT>
-  basic_string&lt;charT>
-  regex_replace(const charT* s,
-                const basic_regex&lt;charT, traits>& e,
-                const charT* fmt,
-                regex_constants::match_flag_type flags =
-                  regex_constants::match_default);</code></pre>
-    <div class="attributes">
-      <p><i>Effects</i>: Constructs an empty string result of type basic_string&lt;charT> and calls regex_replace( back_inserter(result), s, s + char_traits&lt;charT>::length(s), e, fmt, flags).</p>
-      <p><i>Returns</i>: result.</p>
-    </div>
   </section>
 
   <section>
