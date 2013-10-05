@@ -67,8 +67,8 @@ div.ednote {display: inline-block; margin-left: 1ex; border: thin solid #fb6;
 <body>
   <header>
     <div class="docinfo">
-      <p>ISO/IEC JTC1 SC22 WG21 N????</p>
-      <p>Date: <time pubdate="">2013-08-26</time></p>
+      <p>ISO/IEC JTC1 SC22 WG21 N3762</p>
+      <p>Date: <time pubdate="">2013-09-01</time></p>
       <address>
         <p>Jeffrey Yasskin &lt;<a href="mailto:jyasskin@google.com">jyasskin@google.com</a>&gt;</p>
       </address>
@@ -467,10 +467,18 @@ string_view str(space);</code></pre>
     <h2 id="revision-history">Paper revision history</h2>
     <p>This paper updates N3685 by removing other standard library updates so
     that the core <code>string_view</code> class can be accepted independently.
-    I've also fixed some bugs in the <code>pos</code> and <code>n</code> parameters,
-    added <code>copy()</code> back, and removed the assumption that <a
-    href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2013/n3687.html#2232">LWG
-    issue 2232</a> will be fixed.</p>
+    I've also:</p>
+    <ul>
+      <li>Fixed some bugs in the <code>pos</code> and <code>n</code> parameters,</li>
+      <li>Added <code>copy()</code> back,</li>
+      <li>Removed the assumption that <a
+      href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2013/n3687.html#2232">LWG
+      issue 2232</a> will be fixed,</li>
+      <li>Added a member <code>swap()</code> since it's constant time,</li>
+      <li>Ensured that <code>std::swap</code> and the range access functions are
+      available when <code>&lt;string_view></code> is included, and</li>
+      <li>Fixed up some <code>noexcept</code>s.</li>
+    </ul>
 
     <p><a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2013/n3685.html">N3685</a> updated N3609 with the results of the <a
     href="http://wiki.edg.com/twiki/bin/view/Wg21bristol/LibraryEvolutionWorkingGroup#N3609">LEWG
@@ -586,6 +594,8 @@ string_view str(space);</code></pre>
     <p>The function templates defined in [utility.swap] and [iterator.range] are
     available when <code>&lt;string_view></code> is included.</p>
 
+    <div class="ednote"><p>Normally I would update the list in [iterator.range], but we're not yet sure how to do that in a TS, so I picked the more self-contained option.</p></div>
+
      <pre><code>namespace std {
   template&lt;class charT, class traits = char_traits&lt;charT>>
   class basic_string_view {
@@ -614,7 +624,7 @@ string_view str(space);</code></pre>
     basic_string_view(const charT* str);</code></pre>
     <div class="ednote"><p>Not constexpr because that would rely on potentially-controversial changes to char_traits::length().</p></div>
 <pre><code>    constexpr basic_string_view(const charT* str, size_type len);</code></pre>
-    <div class="ednote"><p>No initializer_list constructor because [dcl.init.list]p6 says it would likely store a dangling reference into the string_view.</p></div>
+    <div class="ednote"><p>No initializer_list constructor because [dcl.init.list]p6 says it would likely store a dangling reference into the <code>basic_string_view</code>.</p></div>
 
 <pre><code>    // [string.view.iterators], iterators
     constexpr const_iterator begin() const noexcept;
@@ -665,32 +675,33 @@ string_view str(space);</code></pre>
     size_type find(charT c, size_type pos=0) const noexcept;
     size_type find(const charT* s, size_type pos, size_type n) const;
     size_type find(const charT* s, size_type pos=0) const;
-    size_type rfind(basic_string_view s, size_type pos=0) const noexcept;
-    size_type rfind(charT c, size_type pos=0) const noexcept;
+    size_type rfind(basic_string_view s, size_type pos=npos) const noexcept;
+    size_type rfind(charT c, size_type pos=npos) const noexcept;
     size_type rfind(const charT* s, size_type pos, size_type n) const;
-    size_type rfind(const charT* s, size_type pos=0) const;
+    size_type rfind(const charT* s, size_type pos=npos) const;
     size_type find_first_of(basic_string_view s, size_type pos=0) const noexcept;
     size_type find_first_of(charT c, size_type pos=0) const noexcept;
     size_type find_first_of(const charT* s, size_type pos, size_type n) const;
     size_type find_first_of(const charT* s, size_type pos=0) const;
-    size_type find_last_of(basic_string_view s, size_type pos=0) const noexcept;
-    size_type find_last_of(charT c, size_type pos=0) const noexcept;
+    size_type find_last_of(basic_string_view s, size_type pos=npos) const noexcept;
+    size_type find_last_of(charT c, size_type pos=npos) const noexcept;
     size_type find_last_of(const charT* s, size_type pos, size_type n) const;
-    size_type find_last_of(const charT* s, size_type pos=0) const;
+    size_type find_last_of(const charT* s, size_type pos=npos) const;
     size_type find_first_not_of(basic_string_view s, size_type pos=0) const noexcept;
     size_type find_first_not_of(charT c, size_type pos=0) const noexcept;
     size_type find_first_not_of(const charT* s, size_type pos, size_type n) const;
     size_type find_first_not_of(const charT* s, size_type pos=0) const;
-    size_type find_last_not_of(basic_string_view s, size_type pos=0) const noexcept;
-    size_type find_last_not_of(charT c, size_type pos=0) const noexcept;
+    size_type find_last_not_of(basic_string_view s, size_type pos=npos) const noexcept;
+    size_type find_last_not_of(charT c, size_type pos=npos) const noexcept;
     size_type find_last_not_of(const charT* s, size_type pos, size_type n) const;
-    size_type find_last_not_of(const charT* s, size_type pos=0) const;
+    size_type find_last_not_of(const charT* s, size_type pos=npos) const;
   };
 }</code></pre>
 
     <p>In every specialization <code>basic_string_view&lt;charT, traits></code>,
-    the type <code>traits::char_type</code> shall name the same type as
-    <code>charT</code>.</p>
+    the type <code>traits</code> shall satisfy the character traits
+    requirements ([char.traits]), and the type <code>traits::char_type</code>
+    shall name the same type as <code>charT</code>.</p>
 
     <p>Each member function of the form</p>
     <pre><code>rt fx1(const charT* s[, size_type pos[, size_type n]]); // find() variants</code></pre>
@@ -756,6 +767,8 @@ basic_string_view(const basic_string&lt;charT, traits, Allocator>& str) noexcept
       <p>For a basic_string_view str, any operation that invalidates a pointer in
       the range [str.data(), str.data()+str.size()) invalidates pointers and
       iterators returned from str’s methods.</p>
+      <p>All requirements on container iterators ([container.requirements])
+      apply to <code>basic_string_view::const_iterator</code> as well.</p>
     </div>
 
 
@@ -777,18 +790,18 @@ const_reverse_iterator crend() const noexcept;</code></pre>
 
     <h4>Add a subclause "x.3 basic_string_view capacity [string.view.capacity]"</h4>
 
-    <pre><code>size_type size() const noexcept;</code></pre>
+    <pre><code>constexpr size_type size() const noexcept;</code></pre>
     <div class="attributes">
-      <p><i>Returns</i>: A count of the number of char-like objects referred to by the string_view.</p>
+      <p><i>Returns</i>: A count of the number of char-like objects referred to by the <code>basic_string_view</code>.</p>
     </div>
 
-    <pre><code>size_type length() const noexcept;</code></pre>
+    <pre><code>constexpr size_type length() const noexcept;</code></pre>
     <p class="attribute"><i>Returns</i>: size().</p>
 
-    <pre><code>size_type max_size() const noexcept;</code></pre>
-    <p class="attribute"><i>Returns</i>: The size of the largest possible string_view.</p>
+    <pre><code>constexpr size_type max_size() const noexcept;</code></pre>
+    <p class="attribute"><i>Returns</i>: The size of the largest possible <code>basic_string_view</code>.</p>
 
-    <pre><code>bool empty() const noexcept;</code></pre>
+    <pre><code>constexpr bool empty() const noexcept;</code></pre>
     <p class="attribute"><i>Returns</i>: size() == 0.</p>
 
 
@@ -822,7 +835,7 @@ const_reverse_iterator crend() const noexcept;</code></pre>
       <p><i>Effects</i>: Equivalent to <code>return operator[](size() - 1)</code>.</p>
     </div>
 
-    <pre><code>const charT* data() const noexcept;</code></pre>
+    <pre><code>constexpr const charT* data() const noexcept;</code></pre>
     <div class="attributes">
       <p><i>Returns</i>: A non-null pointer p such that p + i == &operator[](i) for each i in [0,size()).</p>
       <p>[ Note: Unlike std::string::data() and string literals, data() may
@@ -850,7 +863,7 @@ const_reverse_iterator crend() const noexcept;</code></pre>
 
     <pre><code>void swap(basic_string_view& s) noexcept</code></pre>
     <div class="attributes">
-      <p><i>Effects</i>: Equivalent to <code>std::swap(*this, s)</code></p>
+      <p><i>Effects</i>: Exchanges the values of <code>*this</code> and <code>s</code>.</p>
     </div>
 
 
@@ -873,7 +886,7 @@ operator basic_string&lt;charT, traits, Allocator>() const;</code></pre>
       <p><i>Returns</i>: <code><var>rlen</var></code>.</p>
     </div>
 
-    <pre><code>basic_string_view substr(size_type pos = 0, size_type n = npos) const;</code></pre>
+    <pre><code>constexpr basic_string_view substr(size_type pos = 0, size_type n = npos) const;</code></pre>
     <div class="attributes">
       <p><i>Throws</i>: out_of_range if pos > size().</p>
       <p><i>Effects</i>: Determines the effective length rlen of the string to reference as the smaller of n and size() - pos.</p>
@@ -925,7 +938,7 @@ operator basic_string&lt;charT, traits, Allocator>() const;</code></pre>
       <p><i>Remarks</i>: Uses traits::eq().</p>
     </div>
 
-    <pre><code>size_type rfind(basic_string_view str, size_type pos=0) const noexcept;</code></pre>
+    <pre><code>size_type rfind(basic_string_view str, size_type pos=npos) const noexcept;</code></pre>
     <div class="attributes">
       <p><i>Effects</i>: Determines the highest position xpos, if possible, such that the following conditions obtain:</p>
       <ul><li>xpos &lt;= pos</li>
@@ -945,7 +958,7 @@ operator basic_string&lt;charT, traits, Allocator>() const;</code></pre>
       <p><i>Remarks</i>: Uses traits::eq().</p>
     </div>
 
-    <pre><code>size_type find_last_of(basic_string_view str, size_type pos=0) const noexcept;</code></pre>
+    <pre><code>size_type find_last_of(basic_string_view str, size_type pos=npos) const noexcept;</code></pre>
     <div class="attributes">
       <p><i>Effects</i>: Determines the highest position xpos, if possible, such that the following conditions obtain:</p>
       <ul><li>xpos &lt;= pos</li>
@@ -965,7 +978,7 @@ operator basic_string&lt;charT, traits, Allocator>() const;</code></pre>
       <p><i>Remarks</i>: Uses traits::eq().</p>
     </div>
 
-    <pre><code>size_type find_last_not_of(basic_string_view str, size_type pos=0) const noexcept;</code></pre>
+    <pre><code>size_type find_last_not_of(basic_string_view str, size_type pos=npos) const noexcept;</code></pre>
     <div class="attributes">
       <p><i>Effects</i>: Determines the highest position xpos, if possible, such that the following conditions obtain:</p>
       <ul><li>xpos &lt;= pos</li>
@@ -1064,7 +1077,7 @@ operator basic_string&lt;charT, traits, Allocator>() const;</code></pre>
 
     <h4>Add a subclause "x.9 Inserters and extractors [string.view.io]</h4>
 
-    <pre><code>template&lt;class charT, class traits, class Allocator>
+    <pre><code>template&lt;class charT, class traits>
   basic_ostream&lt;charT, traits>&
     operator&lt;&lt;(basic_ostream&lt;charT, traits>& os,
                basic_string_view&lt;charT,traits> str);</code></pre>
@@ -1096,8 +1109,9 @@ template &lt;> struct hash&lt;wstring_view>;</code></pre>
     <h2 id="acknowledgements">Acknowledgements</h2>
 
     <p>I'd like to thank Marshall Clow, Olaf van der Spek, the Boost and
-    std-proposals mailing lists, Chandler Carruth, Beman Dawes, Daniel Krügler,
-    and Alisdair Meredith for help, advice, and wording in this paper.</p>
+    std-proposals mailing lists, Chandler Carruth, Beman Dawes, Alisdair
+    Meredith, and especially Daniel Krügler for help, advice, and wording in
+    this paper.</p>
   </section>
 
   <script type="text/javascript"><!--
