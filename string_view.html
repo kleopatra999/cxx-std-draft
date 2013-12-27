@@ -67,8 +67,8 @@ div.ednote {display: inline-block; margin-left: 1ex; border: thin solid #fb6;
 <body>
   <header>
     <div class="docinfo">
-      <p>ISO/IEC JTC1 SC22 WG21 N3762</p>
-      <p>Date: <time pubdate="">2013-09-01</time></p>
+      <p>ISO/IEC JTC1 SC22 WG21 N????</p>
+      <p>Date: <time pubdate="">2013-10-07</time></p>
       <address>
         <p>Jeffrey Yasskin &lt;<a href="mailto:jyasskin@google.com">jyasskin@google.com</a>&gt;</p>
       </address>
@@ -513,7 +513,7 @@ string_view str(space);</code></pre>
   <hr/>
 
   <section class="wording">
-    <h2 id="wording">Wording for TS2</h2>
+    <h2 id="wording">Wording for the Fundamentals TS</h2>
 
     <!--<p>Wording changes are being maintained at <a
     href="https://github.com/google/cxx-std-draft/compare/string-ref">https://github.com/google/cxx-std-draft/compare/string-ref</a>
@@ -546,6 +546,7 @@ string_view str(space);</code></pre>
     <h4>Add a "Header &lt;string_view> synopsis"</h4>
 
     <pre><code>namespace std {
+namespace experimental {
   // [basic.string.view], basic_string_view:
   template&lt;class charT, class traits = char_traits&lt;charT>>
       class basic_string_view;
@@ -583,13 +584,15 @@ string_view str(space);</code></pre>
   typedef basic_string_view&lt;char32_t> u32string_view;
   typedef basic_string_view&lt;wchar_t> wstring_view;
 
+}  // namespace experimental
+
   // [string.view.hash], hash support:
   template &lt;class T> struct hash;
-  template &lt;> struct hash&lt;string_view>;
-  template &lt;> struct hash&lt;u16string_view>;
-  template &lt;> struct hash&lt;u32string_view>;
-  template &lt;> struct hash&lt;wstring_view>;
-}</code></pre>
+  template &lt;> struct hash&lt;experimental::string_view>;
+  template &lt;> struct hash&lt;experimental::u16string_view>;
+  template &lt;> struct hash&lt;experimental::u32string_view>;
+  template &lt;> struct hash&lt;experimental::wstring_view>;
+}  // namespace std</code></pre>
 
     <p>The function templates defined in [utility.swap] and [iterator.range] are
     available when <code>&lt;string_view></code> is included.</p>
@@ -621,8 +624,8 @@ string_view str(space);</code></pre>
     basic_string_view& operator=(const basic_string_view&) noexcept = default;
     template&lt;class Allocator>
     basic_string_view(const basic_string&lt;charT, traits, Allocator>& str) noexcept;
-    basic_string_view(const charT* str);</code></pre>
-    <div class="ednote"><p>Not constexpr because that would rely on potentially-controversial changes to char_traits::length().</p></div>
+    constexpr basic_string_view(const charT* str);</code></pre>
+    <div class="ednote"><p>The above constructor is constexpr to take advantage of user-written traits classes that might provide a constexpr <code>length()</code> function.  It can't be part of a constant expression with <code>std::char_traits&lt;char></code> without changes to that class.</p></div>
 <pre><code>    constexpr basic_string_view(const charT* str, size_type len);</code></pre>
     <div class="ednote"><p>No initializer_list constructor because [dcl.init.list]p6 says it would likely store a dangling reference into the <code>basic_string_view</code>.</p></div>
 
@@ -703,57 +706,49 @@ string_view str(space);</code></pre>
     requirements ([char.traits]), and the type <code>traits::char_type</code>
     shall name the same type as <code>charT</code>.</p>
 
-    <p>Each member function of the form</p>
-    <pre><code>rt fx1(const charT* s[, size_type pos[, size_type n]]); // find() variants</code></pre>
-    <p>is equivalent to <code>return fx1(basic_string_view(s[, n])[, pos])</code>.</p>
-
-    <p>Each member function of the form</p>
-    <pre><code>rt fx2(charT c, size_type pos); // find() variants</code></pre>
-    <p>is equivalent to <code>return fx2(basic_string_view(&c, 1), pos)</code>.</p>
-
     <h4>Add a subclause "x.1 basic_string_view constructors and assignment operators  [string.view.cons]"</h4>
 
     <pre><code>constexpr basic_string_view() noexcept;</code></pre>
     <div class="attributes">
-      <p><i>Effects</i>: Constructs an empty basic_string_view.</p>
-      <p><i>Postcondition</i>: empty() == true and [data(),data()) is a valid range.</p>
+      <p><i>Effects</i>: Constructs an empty <code>basic_string_view</code>.</p>
+      <p><i>Postcondition</i>: <code>empty() == true</code> and [<code>data()</code>,<code>data()</code>) is a valid range.</p>
     </div>
 
     <pre><code>template&lt;class Allocator>
 basic_string_view(const basic_string&lt;charT, traits, Allocator>& str) noexcept;</code></pre>
     <div class="attributes">
-      <p><i>Effects</i>: Constructs a basic_string_view, with the postconditions in Table [tab:string.view.ctr.1]</p>
+      <p><i>Effects</i>: Constructs a <code>basic_string_view</code>, with the postconditions in Table [tab:string.view.ctr.1]</p>
       <p><i>Remarks</i>: The program shall not alter any of the values stored in the character array. [Footnote: This is the same requirement as on <code>str.data()</code> -- end footnote]</p>
       <table><caption>Table [tab:string.view.ctr.1] — basic_string_view(const basic_string&) effects</caption>
       <tr><th>Element</th><th>Value</th></tr>
-      <tr><td>data()</td><td>str.data()</td></tr>
-      <tr><td>size()</td><td>str.size()</td></tr>
+      <tr><td><code>data()</code></td><td><code>str.data()</code></td></tr>
+      <tr><td><code>size()</code></td><td><code>str.size()</code></td></tr>
       </table>
     </div>
 
     <pre><code>basic_string_view(const charT* str);</code></pre>
     <div class="attributes">
-      <p><i>Requires</i>: [str,str + traits::length(str)) is a valid range.</p>
-      <p><i>Effects</i>: Constructs a basic_string_view referring to the same string as str, with the postconditions
+      <p><i>Requires</i>: [<code>str</code>,<code>str + traits::length(str)</code>) is a valid range.</p>
+      <p><i>Effects</i>: Constructs a <code>basic_string_view</code> referring to the same string as <code>str</code>, with the postconditions
       in Table [tab:string.view.ctr.2]</p>
 
       <table><caption>Table [tab:string.view.ctr.2] — basic_string_view(const charT*) effects</caption>
       <tr><th>Element</th><th>Value</th></tr>
-      <tr><td>data()</td><td>str</td></tr>
-      <tr><td>size()</td><td>traits::length(str)</td></tr>
+      <tr><td><code>data()</code></td><td><code>str</code></td></tr>
+      <tr><td><code>size()</code></td><td><code>traits::length(str)</code></td></tr>
       </table>
 
-      <p><i>Complexity</i>: O(size())</p>
+      <p><i>Complexity</i>: O(<code>traits::length(str)</code>)</p>
     </div>
 
     <pre><code>constexpr basic_string_view(const charT* str, size_type len);</code></pre>
     <div class="attributes">
-      <p><i>Requires</i>: str is not a null pointer and [str,str + len) is a valid range.</p>
-      <p><i>Effects</i>: Constructs a basic_string_view, with the postconditions in Table [tab:string.view.ctr.3]</p>
+      <p><i>Requires</i>: <code>str</code> is not a null pointer and [<code>str</code>,<code>str + len</code>) is a valid range.</p>
+      <p><i>Effects</i>: Constructs a <code>basic_string_view</code>, with the postconditions in Table [tab:string.view.ctr.3]</p>
       <table><caption>Table [tab:string.view.ctr.3] — basic_string_view(const charT*, size_type) effects</caption>
       <tr><th>Element</th><th>Value</th></tr>
-      <tr><td>data()</td><td>str</td></tr>
-      <tr><td>size()</td><td>len</td></tr>
+      <tr><td><code>data()</code></td><td><code>str</code></td></tr>
+      <tr><td><code>size()</code></td><td><code>len</code></td></tr>
       </table>
     </div>
 
@@ -764,9 +759,9 @@ basic_string_view(const basic_string&lt;charT, traits, Allocator>& str) noexcept
     <div class="attributes">
       <p>A constant random-access iterator type such that, for a <code>const_iterator it</code>,
       if <code>&amp;*(it+N)</code> is valid, then it is equal to <code>(&amp;*it)+N</code>.</p>
-      <p>For a basic_string_view str, any operation that invalidates a pointer in
-      the range [str.data(), str.data()+str.size()) invalidates pointers and
-      iterators returned from str’s methods.</p>
+      <p>For a <code>basic_string_view str</code>, any operation that invalidates a pointer in
+      the range [<code>str.data()</code>, <code>str.data()+str.size()</code>) invalidates pointers,
+      iterators, and references returned from <code>str</code>'s methods.</p>
       <p>All requirements on container iterators ([container.requirements])
       apply to <code>basic_string_view::const_iterator</code> as well.</p>
     </div>
@@ -782,11 +777,11 @@ constexpr const_iterator cend() const noexcept;</code></pre>
 
     <pre><code>const_reverse_iterator rbegin() const noexcept;
 const_reverse_iterator crbegin() const noexcept;</code></pre>
-    <p class="attribute"><i>Returns</i>: An iterator which is semantically equivalent to reverse_iterator(end()).</p>
+    <p class="attribute"><i>Returns</i>: An iterator which is semantically equivalent to <code>reverse_iterator(end())</code>.</p>
 
     <pre><code>const_reverse_iterator rend() const noexcept;
 const_reverse_iterator crend() const noexcept;</code></pre>
-    <p class="attribute"><i>Returns</i>: An iterator which is semantically equivalent to reverse_iterator(begin()).</p>
+    <p class="attribute"><i>Returns</i>: An iterator which is semantically equivalent to <code>reverse_iterator(begin())</code>.</p>
 
     <h4>Add a subclause "x.3 basic_string_view capacity [string.view.capacity]"</h4>
 
@@ -796,52 +791,52 @@ const_reverse_iterator crend() const noexcept;</code></pre>
     </div>
 
     <pre><code>constexpr size_type length() const noexcept;</code></pre>
-    <p class="attribute"><i>Returns</i>: size().</p>
+    <p class="attribute"><i>Returns</i>: <code>size()</code>.</p>
 
     <pre><code>constexpr size_type max_size() const noexcept;</code></pre>
-    <p class="attribute"><i>Returns</i>: The size of the largest possible <code>basic_string_view</code>.</p>
+    <p class="attribute"><i>Returns</i>: The length of the largest possible <code>basic_string_view</code>.</p>
 
     <pre><code>constexpr bool empty() const noexcept;</code></pre>
-    <p class="attribute"><i>Returns</i>: size() == 0.</p>
+    <p class="attribute"><i>Returns</i>: <code>size() == 0</code>.</p>
 
 
     <h4>Add a subclause "x.4 basic_string_view element access [string.view.access]"</h4>
 
     <pre><code>constexpr const_reference operator[](size_type pos) const;</code></pre>
     <div class="attributes">
-      <p><i>Requires</i>: pos &lt; size().</p>
-      <p><i>Returns</i>: *(begin() + pos)</p>
+      <p><i>Requires</i>: <code>pos &lt; size()</code>.</p>
+      <p><i>Returns</i>: <code>*(begin() + pos)</code></p>
       <p><i>Throws</i>: Nothing.</p>
-      <p>[ Note: Unlike basic_string::operator[],
-      basic_string_view::operator[](size()) has undefined behavior instead of
-      returning charT(). — end note ]</p>
+      <p>[ Note: Unlike <code>basic_string::operator[]</code>,
+      <code>basic_string_view::operator[](size())</code> has undefined behavior instead of
+      returning <code>charT()</code>. — end note ]</p>
     </div>
 
     <pre><code>constexpr const_reference at(size_type pos) const;</code></pre>
     <div class="attributes">
-      <p><i>Throws</i>: out_of_range if pos >= size().</p>
-      <p><i>Returns</i>: operator[](pos).</p>
+      <p><i>Throws</i>: <code>out_of_range</code> if <code>pos >= size()</code>.</p>
+      <p><i>Returns</i>: <code>operator[](pos)</code>.</p>
     </div>
 
     <pre><code>constexpr const charT& front() const;</code></pre>
     <div class="attributes">
-      <p><i>Requires</i>: !empty()</p>
+      <p><i>Requires</i>: <code>!empty()</code></p>
       <p><i>Effects</i>: Equivalent to <code>return operator[](0)</code>.</p>
     </div>
 
     <pre><code>constexpr const charT& back() const;</code></pre>
     <div class="attributes">
-      <p><i>Requires</i>: !empty()</p>
+      <p><i>Requires</i>: <code>!empty()</code></p>
       <p><i>Effects</i>: Equivalent to <code>return operator[](size() - 1)</code>.</p>
     </div>
 
     <pre><code>constexpr const charT* data() const noexcept;</code></pre>
     <div class="attributes">
-      <p><i>Returns</i>: A non-null pointer p such that p + i == &operator[](i) for each i in [0,size()).</p>
-      <p>[ Note: Unlike std::string::data() and string literals, data() may
+      <p><i>Returns</i>: A non-null pointer <code>p</code> such that <code>p + i == &operator[](i)</code> for each <code>i</code> in [<code>0</code>,<code>size()</code>).</p>
+      <p>[ Note: Unlike <code>std::string::data()</code> and string literals, <code>data()</code> may
       return a pointer to a buffer that is not null-terminated. Therefore it is
-      typically a mistake to pass data() to a routine that takes just a const
-      charT* and expects a null-terminated string. — end note ]</p>
+      typically a mistake to pass <code>data()</code> to a routine that takes just a
+      <code>const charT*</code> and expects a null-terminated string. — end note ]</p>
     </div>
 
     <h4 id="string.view.modifiers">Add a subclause "x.5 basic_string_view modifiers [string.view.modifiers]"</h4>
@@ -888,22 +883,26 @@ operator basic_string&lt;charT, traits, Allocator>() const;</code></pre>
 
     <pre><code>constexpr basic_string_view substr(size_type pos = 0, size_type n = npos) const;</code></pre>
     <div class="attributes">
-      <p><i>Throws</i>: out_of_range if pos > size().</p>
-      <p><i>Effects</i>: Determines the effective length rlen of the string to reference as the smaller of n and size() - pos.</p>
-      <p><i>Returns</i>: basic_string_view(data()+pos, rlen).</p>
+      <p><i>Throws</i>: <code>out_of_range</code> if <code>pos > size()</code>.</p>
+      <p><i>Effects</i>: Determines the effective length <code><var>rlen</var></code> of the string to reference as the smaller of <code>n</code> and <code>size() - pos</code>.</p>
+      <p><i>Returns</i>: <code>basic_string_view(data()+pos, <var>rlen</var>)</code>.</p>
     </div>
 
     <pre><code>int compare(basic_string_view str) const noexcept;</code></pre>
     <div class="attributes">
-      <p><i>Effects</i>: Determines the effective length rlen of the strings to compare as the smallest of size() and str.size(). The function then compares the two strings by calling traits::compare(data(), str.data(), rlen).</p>
-      <p><i>Complexity</i>: O(rlen)</p>
+      <p><i>Effects</i>: Determines the effective length
+      <code><var>rlen</var></code> of the strings to compare as the
+      smallest of <code>size()</code> and <code>str.size()</code>. The
+      function then compares the two strings by calling
+      <code>traits::compare(data(), str.data(), <var>rlen</var>)</code>.</p>
+      <p><i>Complexity</i>: O(<code><var>rlen</var></code>)</p>
       <p><i>Returns</i>: The nonzero result if the result of the comparison is nonzero. Otherwise, returns a value as
       indicated in Table [tab:string.view.compare].</p>
       <table><caption>Table [tab:string.view.compare] — compare() results</caption>
       <tr><th>Condition</th><th>Return Value</th></tr>
-      <tr><td>size() &lt; str.size()</td><td>&lt; 0</td></tr>
-      <tr><td>size() == str.size()</td><td>0</td></tr>
-      <tr><td>size() >  str.size()</td><td>> 0</td></tr>
+      <tr><td><code>size() &lt; str.size()</code></td><td><code>&lt; 0</code></td></tr>
+      <tr><td><code>size() == str.size()</code></td><td><code>0</code></td></tr>
+      <tr><td><code>size() >  str.size()</code></td><td><code>> 0</code></td></tr>
       </table>
     </div>
 
@@ -923,69 +922,80 @@ operator basic_string&lt;charT, traits, Allocator>() const;</code></pre>
 
     <h5>Add a sub-subclause "x.6.1 Searching basic_string_view [string.view.find]"</h5>
 
-    <p>Member functions in this section have complexity O(size() *
-    argument.size()) at worst, although implementations are encouraged to do
-    better.</p>
+    <p>Member functions in this section have complexity O(<code>size() * argument.size()</code>)
+    at worst, although implementations are encouraged to do better.</p>
+
+    <p>Each member function of the form</p>
+    <pre><code><var>return-type fx1</var>(const charT* s, size_type pos);</code></pre>
+    <p>is equivalent to <code>return <var>fx1</var>(basic_string_view(s), pos)</code>.</p>
+
+    <p>Each member function of the form</p>
+    <pre><code><var>return-type fx1</var>(const charT* s, size_type pos, size_type n); // find() variants</code></pre>
+    <p>is equivalent to <code>return <var>fx1</var>(basic_string_view(s, n), pos)</code>.</p>
+
+    <p>Each member function of the form</p>
+    <pre><code><var>return-type fx2</var>(charT c, size_type pos); // find() variants</code></pre>
+    <p>is equivalent to <code>return <var>fx2</var>(basic_string_view(&c, 1), pos)</code>.</p>
 
     <pre><code>size_type find(basic_string_view str, size_type pos=0) const noexcept;</code></pre>
     <div class="attributes">
-      <p><i>Effects</i>: Determines the lowest position xpos, if possible, such that the following conditions obtain:</p>
-      <ul><li>pos &lt;= xpos</li>
-      <li>xpos + str.size() &lt;= size();</li>
-      <li>traits::eq(at(xpos+I), str.at(I)) for all elements I of the string referenced by str.</li>
+      <p><i>Effects</i>: Determines the lowest position <code><var>xpos</var></code>, if possible, such that the following conditions obtain:</p>
+      <ul><li><code>pos &lt;= <var>xpos</var></code></li>
+      <li><code><var>xpos</var> + str.size() &lt;= size()</code></li>
+      <li><code>traits::eq(at(<var>xpos</var>+I), str.at(I))</code> for all elements <code>I</code> of the string referenced by <code>str</code>.</li>
       </ul>
-      <p><i>Returns</i>: xpos if the function can determine such a value for xpos. Otherwise, returns npos.</p>
-      <p><i>Remarks</i>: Uses traits::eq().</p>
+      <p><i>Returns</i>: <code><var>xpos</var></code> if the function can determine such a value for <code><var>xpos</var></code>. Otherwise, returns <code>npos</code>.</p>
+      <p><i>Remarks</i>: Uses <code>traits::eq()</code>.</p>
     </div>
 
     <pre><code>size_type rfind(basic_string_view str, size_type pos=npos) const noexcept;</code></pre>
     <div class="attributes">
-      <p><i>Effects</i>: Determines the highest position xpos, if possible, such that the following conditions obtain:</p>
-      <ul><li>xpos &lt;= pos</li>
-      <li>xpos + str.size() &lt;= size();</li>
-      <li>traits::eq(at(xpos+I), str.at(I)) for all elements I of the string referenced by str.</li></ul>
-      <p><i>Returns</i>: xpos if the function can determine such a value for xpos. Otherwise, returns npos.</p>
-      <p><i>Remarks</i>: Uses traits::eq().</p>
+      <p><i>Effects</i>: Determines the highest position <code>xpos</code>, if possible, such that the following conditions obtain:</p>
+      <ul><li><code>xpos &lt;= pos</code></li>
+      <li><code>xpos + str.size() &lt;= size()</code></li>
+      <li><code>traits::eq(at(xpos+I), str.at(I))</code> for all elements <code>I</code> of the string referenced by <code>str</code>.</li></ul>
+      <p><i>Returns</i>: <code>xpos</code> if the function can determine such a value for <code>xpos</code>. Otherwise, returns <code>npos</code>.</p>
+      <p><i>Remarks</i>: Uses <code>traits::eq()</code>.</p>
     </div>
 
     <pre><code>size_type find_first_of(basic_string_view str, size_type pos=0) const noexcept;</code></pre>
     <div class="attributes">
-      <p><i>Effects</i>: Determines the lowest position xpos, if possible, such that the following conditions obtain:</p>
-      <ul><li>pos &lt;= xpos</li>
-      <li>xpos &lt; size();</li>
-      <li>traits::eq(at(xpos), str.at(I)) for some element I of the string referenced by str.</li></ul>
-      <p><i>Returns</i>: xpos if the function can determine such a value for xpos. Otherwise, returns npos.</p>
-      <p><i>Remarks</i>: Uses traits::eq().</p>
+      <p><i>Effects</i>: Determines the lowest position <code>xpos</code>, if possible, such that the following conditions obtain:</p>
+      <ul><li><code>pos &lt;= xpos</code></li>
+      <li><code>xpos &lt; size()</code></li>
+      <li><code>traits::eq(at(xpos), str.at(I))</code> for some element <code>I</code> of the string referenced by <code>str</code>.</li></ul>
+      <p><i>Returns</i>: <code>xpos</code> if the function can determine such a value for <code>xpos</code>. Otherwise, returns <code>npos</code>.</p>
+      <p><i>Remarks</i>: Uses <code>traits::eq()</code>.</p>
     </div>
 
     <pre><code>size_type find_last_of(basic_string_view str, size_type pos=npos) const noexcept;</code></pre>
     <div class="attributes">
-      <p><i>Effects</i>: Determines the highest position xpos, if possible, such that the following conditions obtain:</p>
-      <ul><li>xpos &lt;= pos</li>
-      <li>xpos &lt; size();</li>
-      <li>traits::eq(at(xpos), str.at(I)) for some element I of the string referenced by str.</li></ul>
-      <p><i>Returns</i>: xpos if the function can determine such a value for xpos. Otherwise, returns npos.</p>
-      <p><i>Remarks</i>: Uses traits::eq().</p>
+      <p><i>Effects</i>: Determines the highest position <code>xpos</code>, if possible, such that the following conditions obtain:</p>
+      <ul><li><code>xpos &lt;= pos</code></li>
+      <li><code>xpos &lt; size()</code></li>
+      <li><code>traits::eq(at(xpos), str.at(I))</code> for some element <code>I</code> of the string referenced by <code>str</code>.</li></ul>
+      <p><i>Returns</i>: <code>xpos</code> if the function can determine such a value for <code>xpos</code>. Otherwise, returns <code>npos</code>.</p>
+      <p><i>Remarks</i>: Uses <code>traits::eq()</code>.</p>
     </div>
 
     <pre><code>size_type find_first_not_of(basic_string_view str, size_type pos=0) const noexcept;</code></pre>
     <div class="attributes">
-      <p><i>Effects</i>: Determines the lowest position xpos, if possible, such that the following conditions obtain:</p>
-      <ul><li>pos &lt;= xpos</li>
-      <li>xpos &lt; size();</li>
-      <li>traits::eq(at(xpos), str.at(I)) for no element I of the string referenced by str.</li></ul>
-      <p><i>Returns</i>: xpos if the function can determine such a value for xpos. Otherwise, returns npos.</p>
-      <p><i>Remarks</i>: Uses traits::eq().</p>
+      <p><i>Effects</i>: Determines the lowest position <code>xpos</code>, if possible, such that the following conditions obtain:</p>
+      <ul><li><code>pos &lt;= xpos</code></li>
+      <li><code>xpos &lt; size()</code></li>
+      <li><code>traits::eq(at(xpos), str.at(I))</code> for no element <code>I</code> of the string referenced by <code>str</code>.</li></ul>
+      <p><i>Returns</i>: <code>xpos</code> if the function can determine such a value for <code>xpos</code>. Otherwise, returns <code>npos</code>.</p>
+      <p><i>Remarks</i>: Uses <code>traits::eq()</code>.</p>
     </div>
 
     <pre><code>size_type find_last_not_of(basic_string_view str, size_type pos=npos) const noexcept;</code></pre>
     <div class="attributes">
-      <p><i>Effects</i>: Determines the highest position xpos, if possible, such that the following conditions obtain:</p>
-      <ul><li>xpos &lt;= pos</li>
-      <li>xpos &lt; size();</li>
-      <li>traits::eq(at(xpos), str.at(I)) for no element I of the string referenced by str.</li></ul>
-      <p><i>Returns</i>: xpos if the function can determine such a value for xpos. Otherwise, returns npos.</p>
-      <p><i>Remarks</i>: Uses traits::eq().</p>
+      <p><i>Effects</i>: Determines the highest position <code>xpos</code>, if possible, such that the following conditions obtain:</p>
+      <ul><li><code>xpos &lt;= pos</code></li>
+      <li><code>xpos &lt; size()</code></li>
+      <li><code>traits::eq(at(xpos), str.at(I))</code> for no element <code>I</code> of the string referenced by <code>str</code>.</li></ul>
+      <p><i>Returns</i>: <code>xpos</code> if the function can determine such a value for <code>xpos</code>. Otherwise, returns <code>npos</code>.</p>
+      <p><i>Remarks</i>: Uses <code>traits::eq()</code>.</p>
     </div>
 
 
@@ -1000,18 +1010,18 @@ operator basic_string&lt;charT, traits, Allocator>() const;</code></pre>
 
     <table><caption>Table [tab:string.view.comparison.overloads] —<wbr/> Additional basic_string_view comparison overloads</caption>
     <tr><th>Expression</th><th>Equivalent to</th></tr>
-    <tr><td>t == sp</td><td>basic_string_view&lt;charT, traits>(t) == sp</td></tr>
-    <tr><td>sp == t</td><td>sp == basic_string_view&lt;charT, traits>(t)</td></tr>
-    <tr><td>t != sp</td><td>basic_string_view&lt;charT, traits>(t) != sp</td></tr>
-    <tr><td>sp != t</td><td>sp != basic_string_view&lt;charT, traits>(t)</td></tr>
-    <tr><td>t &lt; sp</td><td>basic_string_view&lt;charT, traits>(t) &lt; sp</td></tr>
-    <tr><td>sp &lt; t</td><td>sp &lt; basic_string_view&lt;charT, traits>(t)</td></tr>
-    <tr><td>t > sp</td><td>basic_string_view&lt;charT, traits>(t) > sp</td></tr>
-    <tr><td>sp > t</td><td>sp > basic_string_view&lt;charT, traits>(t)</td></tr>
-    <tr><td>t &lt;= sp</td><td>basic_string_view&lt;charT, traits>(t) &lt;= sp</td></tr>
-    <tr><td>sp &lt;= t</td><td>sp &lt;= basic_string_view&lt;charT, traits>(t)</td></tr>
-    <tr><td>t >= sp</td><td>basic_string_view&lt;charT, traits>(t) >= sp</td></tr>
-    <tr><td>sp >= t</td><td>sp >= basic_string_view&lt;charT, traits>(t)</td></tr>
+    <tr><td><code>t == sp</code></td><td><code>basic_string_view&lt;charT, traits>(t) == sp</code></td></tr>
+    <tr><td><code>sp == t</code></td><td><code>sp == basic_string_view&lt;charT, traits>(t)</code></td></tr>
+    <tr><td><code>t != sp</code></td><td><code>basic_string_view&lt;charT, traits>(t) != sp</code></td></tr>
+    <tr><td><code>sp != t</code></td><td><code>sp != basic_string_view&lt;charT, traits>(t)</code></td></tr>
+    <tr><td><code>t &lt; sp</code></td><td><code>basic_string_view&lt;charT, traits>(t) &lt; sp</code></td></tr>
+    <tr><td><code>sp &lt; t</code></td><td><code>sp &lt; basic_string_view&lt;charT, traits>(t)</code></td></tr>
+    <tr><td><code>t > sp</code></td><td><code>basic_string_view&lt;charT, traits>(t) > sp</code></td></tr>
+    <tr><td><code>sp > t</code></td><td><code>sp > basic_string_view&lt;charT, traits>(t)</code></td></tr>
+    <tr><td><code>t &lt;= sp</code></td><td><code>basic_string_view&lt;charT, traits>(t) &lt;= sp</code></td></tr>
+    <tr><td><code>sp &lt;= t</code></td><td><code>sp &lt;= basic_string_view&lt;charT, traits>(t)</code></td></tr>
+    <tr><td><code>t >= sp</code></td><td><code>basic_string_view&lt;charT, traits>(t) >= sp</code></td></tr>
+    <tr><td><code>sp >= t</code></td><td><code>sp >= basic_string_view&lt;charT, traits>(t)</code></td></tr>
     </table>
 
     <p>[ Example: A sample conforming implementation for operator== would be:</p>
@@ -1036,32 +1046,32 @@ operator basic_string&lt;charT, traits, Allocator>() const;</code></pre>
 <pre><code>template&lt;class charT, class traits>
   bool operator==(basic_string_view&lt;charT,traits> lhs,
                   basic_string_view&lt;charT,traits> rhs) noexcept;</code></pre>
-    <p class="attribute"><i>Returns</i>: lhs.compare(rhs) == 0.</p>
+    <p class="attribute"><i>Returns</i>: <code>lhs.compare(rhs) == 0</code>.</p>
 
 <pre><code>template&lt;class charT, class traits>
   bool operator!=(basic_string_view&lt;charT,traits> lhs,
                   basic_string_view&lt;charT,traits> rhs) noexcept;</code></pre>
-    <p class="attribute"><i>Returns</i>: !(lhs == rhs).</p>
+    <p class="attribute"><i>Returns</i>: <code>!(lhs == rhs)</code>.</p>
 
 <pre><code>template&lt;class charT, class traits>
   bool operator&lt; (basic_string_view&lt;charT,traits> lhs,
                   basic_string_view&lt;charT,traits> rhs) noexcept;</code></pre>
-    <p class="attribute"><i>Returns</i>: lhs.compare(rhs) &lt; 0.</p>
+    <p class="attribute"><i>Returns</i>: <code>lhs.compare(rhs) &lt; 0</code>.</p>
 
 <pre><code>template&lt;class charT, class traits>
   bool operator> (basic_string_view&lt;charT,traits> lhs,
                   basic_string_view&lt;charT,traits> rhs) noexcept;</code></pre>
-    <p class="attribute"><i>Returns</i>: lhs.compare(rhs) > 0.</p>
+    <p class="attribute"><i>Returns</i>: <code>lhs.compare(rhs) > 0</code>.</p>
 
 <pre><code>template&lt;class charT, class traits>
   bool operator&lt;=(basic_string_view&lt;charT,traits> lhs,
                   basic_string_view&lt;charT,traits> rhs) noexcept;</code></pre>
-    <p class="attribute"><i>Returns</i>: lhs.compare(rhs) &lt;= 0.</p>
+    <p class="attribute"><i>Returns</i>: <code>lhs.compare(rhs) &lt;= 0</code>.</p>
 
 <pre><code>template&lt;class charT, class traits>
   bool operator>=(basic_string_view&lt;charT,traits> lhs,
                   basic_string_view&lt;charT,traits> rhs) noexcept;</code></pre>
-    <p class="attribute"><i>Returns</i>: lhs.compare(rhs) >= 0.</p>
+    <p class="attribute"><i>Returns</i>: <code>lhs.compare(rhs) >= 0</code>.</p>
 
     <h4 id="string.view.nonmem">Add a subclause "x.8 Other basic_string_view non-member functions [string.view.nonmem]"</h4>
 
@@ -1071,8 +1081,8 @@ operator basic_string&lt;charT, traits, Allocator>() const;</code></pre>
     basic_string_view&lt;charT, traits> str,
     const Allocator& a = Allocator());</code></pre>
     <div class="attributes">
-      <p><i>Complexity</i>: O(str.size())</p>
-      <p><i>Returns</i>: basic_string&lt;charT, traits, Allocator>(str.begin(), str.end(), a).</p>
+      <p><i>Complexity</i>: O(<code>str.size()</code>)</p>
+      <p><i>Returns</i>: <code>basic_string&lt;charT, traits, Allocator>(str.begin(), str.end(), a)</code>.</p>
     </div>
 
     <h4>Add a subclause "x.9 Inserters and extractors [string.view.io]</h4>
