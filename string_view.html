@@ -446,7 +446,39 @@ string_view str(space);</code></pre>
         <tr><td>SF</td><td>WF</td><td>N</td><td>WA</td><td>SA</td></tr>
         <tr><td>0</td><td>0</td><td>1</td><td>5</td><td>6</td></tr>
       </table>
+    </section>
 
+    <section>
+      <h3 id="null-data"><code>string_view().data() == nullptr</code>?</h3>
+
+      <p>The obvious way to initialize a default constructed
+      <code>string_view</code> is with <code>.data() == nullptr</code> and
+      <code>.size() == 0</code>. However, that violates an invariant of <a
+      href="#string.view.data"><code>data()</code></a>, that it never returns
+      <code>nullptr</code>.  Instead, implementations must initialize
+      <code>data()</code> with an arbitrary pointer value such that
+      [<code>data()</code>,<code>data()</code>) is a valid range. (On many
+      platforms, an arbitrary value might suffice, but on some platforms, this
+      might need to be a dereferenceable or one-past-the-end address like
+      <code>this</code> or <code>""</code>.)</p>
+
+      <p>We could imagine avoiding this complication by allowing
+      <code>data()</code> to return <code>nullptr</code>, which would also allow
+      us to relax the precondition on <code>string_view(const char*,
+      size_t)</code>.  However, in Google's implementation, we found that
+      programmers tended to use <code>data()==nullptr</code> to signal
+      conditions that differed from simply <code>empty()</code>. This was a
+      source of confusion in interfaces, and it gives <code>string_view</code>
+      one more possible value than <code>const std::string&</code>, so this
+      proposal forbids the possibility.</p>
+
+      <p>Even without relaxing the precondition on <code>string_view(const
+      char*, size_t)</code>, allowing implementations to return a null
+      <code>data()</code> from <code>string_view()</code> without requiring it,
+      would cause portability problems: some users would test for
+      <code>data()==nullptr</code> to identify a default-constructed
+      <code>string_view</code> on that implementation, and would then be unable
+      to use another implementation.</p>
     </section>
   </section>
 
@@ -712,6 +744,7 @@ namespace experimental {
     <div class="attributes">
       <p><i>Effects</i>: Constructs an empty <code>basic_string_view</code>.</p>
       <p><i>Postcondition</i>: <code>empty() == true</code> and [<code>data()</code>,<code>data()</code>) is a valid range.</p>
+      <p><i>Note</i>: As noted in <a href="#string.view.access">[string.view.access]</a>, <code>data() != nullptr</code></p>
     </div>
 
     <pre><code>template&lt;class Allocator>
@@ -800,7 +833,7 @@ const_reverse_iterator crend() const noexcept;</code></pre>
     <p class="attribute"><i>Returns</i>: <code>size() == 0</code>.</p>
 
 
-    <h4>Add a subclause "x.4 basic_string_view element access [string.view.access]"</h4>
+    <h4 id="string.view.access">Add a subclause "x.4 basic_string_view element access [string.view.access]"</h4>
 
     <pre><code>constexpr const_reference operator[](size_type pos) const;</code></pre>
     <div class="attributes">
@@ -830,7 +863,7 @@ const_reverse_iterator crend() const noexcept;</code></pre>
       <p><i>Effects</i>: Equivalent to <code>return operator[](size() - 1)</code>.</p>
     </div>
 
-    <pre><code>constexpr const charT* data() const noexcept;</code></pre>
+    <pre id="string.view.data"><code>constexpr const charT* data() const noexcept;</code></pre>
     <div class="attributes">
       <p><i>Returns</i>: A non-null pointer <code>p</code> such that <code>p + i == &operator[](i)</code> for each <code>i</code> in [<code>0</code>,<code>size()</code>).</p>
       <p>[ Note: Unlike <code>std::string::data()</code> and string literals, <code>data()</code> may
