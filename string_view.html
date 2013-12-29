@@ -730,6 +730,10 @@ namespace experimental {
     size_type find_last_not_of(charT c, size_type pos=npos) const noexcept;
     size_type find_last_not_of(const charT* s, size_type pos, size_type n) const;
     size_type find_last_not_of(const charT* s, size_type pos=npos) const;
+
+   private:
+    const charT* data_;  // <em>exposition only</em>
+    size_type    size_;  // <em>exposition only</em>
   };
 }</code></pre>
 
@@ -743,8 +747,7 @@ namespace experimental {
     <pre><code>constexpr basic_string_view() noexcept;</code></pre>
     <div class="attributes">
       <p><i>Effects</i>: Constructs an empty <code>basic_string_view</code>.</p>
-      <p><i>Postcondition</i>: <code>empty() == true</code> and [<code>data()</code>,<code>data()</code>) is a valid range.</p>
-      <p><i>Note</i>: As noted in <a href="#string.view.access">[string.view.access]</a>, <code>data() != nullptr</code></p>
+      <p><i>Postcondition</i>: <code>size_ == 0</code>, and <code>data_</code> has an unspecified, non-null value such that [<code>data_</code>,<code>data_</code>) is a valid range.</p>
     </div>
 
     <pre><code>template&lt;class Allocator>
@@ -754,8 +757,8 @@ basic_string_view(const basic_string&lt;charT, traits, Allocator>& str) noexcept
       <p><i>Remarks</i>: The program shall not alter any of the values stored in the character array. [Footnote: This is the same requirement as on <code>str.data()</code> -- end footnote]</p>
       <table><caption>Table [tab:string.view.ctr.1] — basic_string_view(const basic_string&) effects</caption>
       <tr><th>Element</th><th>Value</th></tr>
-      <tr><td><code>data()</code></td><td><code>str.data()</code></td></tr>
-      <tr><td><code>size()</code></td><td><code>str.size()</code></td></tr>
+      <tr><td><code>data_</code></td><td><code>str.data()</code></td></tr>
+      <tr><td><code>size_</code></td><td><code>str.size()</code></td></tr>
       </table>
     </div>
 
@@ -767,8 +770,8 @@ basic_string_view(const basic_string&lt;charT, traits, Allocator>& str) noexcept
 
       <table><caption>Table [tab:string.view.ctr.2] — basic_string_view(const charT*) effects</caption>
       <tr><th>Element</th><th>Value</th></tr>
-      <tr><td><code>data()</code></td><td><code>str</code></td></tr>
-      <tr><td><code>size()</code></td><td><code>traits::length(str)</code></td></tr>
+      <tr><td><code>data_</code></td><td><code>str</code></td></tr>
+      <tr><td><code>size_</code></td><td><code>traits::length(str)</code></td></tr>
       </table>
 
       <p><i>Complexity</i>: O(<code>traits::length(str)</code>)</p>
@@ -780,8 +783,8 @@ basic_string_view(const basic_string&lt;charT, traits, Allocator>& str) noexcept
       <p><i>Effects</i>: Constructs a <code>basic_string_view</code>, with the postconditions in Table [tab:string.view.ctr.3]</p>
       <table><caption>Table [tab:string.view.ctr.3] — basic_string_view(const charT*, size_type) effects</caption>
       <tr><th>Element</th><th>Value</th></tr>
-      <tr><td><code>data()</code></td><td><code>str</code></td></tr>
-      <tr><td><code>size()</code></td><td><code>len</code></td></tr>
+      <tr><td><code>data_</code></td><td><code>str</code></td></tr>
+      <tr><td><code>size_</code></td><td><code>len</code></td></tr>
       </table>
     </div>
 
@@ -802,11 +805,11 @@ basic_string_view(const basic_string&lt;charT, traits, Allocator>& str) noexcept
 
     <pre><code>constexpr const_iterator begin() const noexcept;
 constexpr const_iterator cbegin() const noexcept;</code></pre>
-    <p class="attribute"><i>Returns</i>: An iterator referring to the first character in the string.</p>
+    <p class="attribute"><i>Returns</i>: An iterator such that <code>&*begin() == data_</code> if <code>&*begin()</code> is a valid expression, or else an unspecified value such that [<code>begin()</code>,<code>end()</code>) is a valid range.</p>
 
     <pre><code>constexpr const_iterator end() const noexcept;
 constexpr const_iterator cend() const noexcept;</code></pre>
-    <p class="attribute"><i>Returns</i>: An iterator which is the past-the-end value.</p>
+    <p class="attribute"><i>Returns</i>: <code>begin() + size()</code></p>
 
     <pre><code>const_reverse_iterator rbegin() const noexcept;
 const_reverse_iterator crbegin() const noexcept;</code></pre>
@@ -820,17 +823,17 @@ const_reverse_iterator crend() const noexcept;</code></pre>
 
     <pre><code>constexpr size_type size() const noexcept;</code></pre>
     <div class="attributes">
-      <p><i>Returns</i>: A count of the number of char-like objects referred to by the <code>basic_string_view</code>.</p>
+      <p><i>Returns</i>: <code>size_</code></p>
     </div>
 
     <pre><code>constexpr size_type length() const noexcept;</code></pre>
-    <p class="attribute"><i>Returns</i>: <code>size()</code>.</p>
+    <p class="attribute"><i>Returns</i>: <code>size_</code>.</p>
 
     <pre><code>constexpr size_type max_size() const noexcept;</code></pre>
     <p class="attribute"><i>Returns</i>: The length of the largest possible <code>basic_string_view</code>.</p>
 
     <pre><code>constexpr bool empty() const noexcept;</code></pre>
-    <p class="attribute"><i>Returns</i>: <code>size() == 0</code>.</p>
+    <p class="attribute"><i>Returns</i>: <code>size_ == 0</code>.</p>
 
 
     <h4 id="string.view.access">Add a subclause "x.4 basic_string_view element access [string.view.access]"</h4>
@@ -838,7 +841,7 @@ const_reverse_iterator crend() const noexcept;</code></pre>
     <pre><code>constexpr const_reference operator[](size_type pos) const;</code></pre>
     <div class="attributes">
       <p><i>Requires</i>: <code>pos &lt; size()</code>.</p>
-      <p><i>Returns</i>: <code>*(begin() + pos)</code></p>
+      <p><i>Returns</i>: <code>data_[pos]</code></p>
       <p><i>Throws</i>: Nothing.</p>
       <p>[ Note: Unlike <code>basic_string::operator[]</code>,
       <code>basic_string_view::operator[](size())</code> has undefined behavior instead of
@@ -865,7 +868,7 @@ const_reverse_iterator crend() const noexcept;</code></pre>
 
     <pre id="string.view.data"><code>constexpr const charT* data() const noexcept;</code></pre>
     <div class="attributes">
-      <p><i>Returns</i>: A non-null pointer <code>p</code> such that <code>p + i == &operator[](i)</code> for each <code>i</code> in [<code>0</code>,<code>size()</code>).</p>
+      <p><i>Returns</i>: <code>data_</code></p>
       <p>[ Note: Unlike <code>std::string::data()</code> and string literals, <code>data()</code> may
       return a pointer to a buffer that is not null-terminated. Therefore it is
       typically a mistake to pass <code>data()</code> to a routine that takes just a
@@ -880,13 +883,13 @@ const_reverse_iterator crend() const noexcept;</code></pre>
     <pre><code>void remove_prefix(size_type n);</code></pre>
     <div class="attributes">
       <p><i>Requires</i>: <code>n &lt;= size()</code></p>
-      <p><i>Effects</i>: Equivalent to <code>*this = substr(n, npos)</code></p>
+      <p><i>Effects</i>: Equivalent to <code>data_ += n; size_ -= n;</code></p>
     </div>
 
     <pre><code>void remove_suffix(size_type n);</code></pre>
     <div class="attributes">
       <p><i>Requires</i>: <code>n &lt;= size()</code></p>
-      <p><i>Effects</i>: Equivalent to <code>*this = substr(0, size() - n)</code></p>
+      <p><i>Effects</i>: Equivalent to <code>size_ -= n;</code></p>
     </div>
 
     <pre><code>void swap(basic_string_view& s) noexcept</code></pre>
