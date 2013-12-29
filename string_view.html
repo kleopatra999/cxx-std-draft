@@ -579,6 +579,7 @@ string_view str(space);</code></pre>
 
     <pre><code>namespace std {
 namespace experimental {
+inline namespace fundamentals_v1 {
   // [basic.string.view], basic_string_view:
   template&lt;class charT, class traits = char_traits&lt;charT>>
       class basic_string_view;
@@ -616,6 +617,7 @@ namespace experimental {
   typedef basic_string_view&lt;char32_t> u32string_view;
   typedef basic_string_view&lt;wchar_t> wstring_view;
 
+}  // namespace fundamentals_v1
 }  // namespace experimental
 
   // [string.view.hash], hash support:
@@ -632,6 +634,8 @@ namespace experimental {
     <div class="ednote"><p>Normally I would update the list in [iterator.range], but we're not yet sure how to do that in a TS, so I picked the more self-contained option.</p></div>
 
      <pre><code>namespace std {
+namespace experimental {
+namespace fundamentals_v1 {
   template&lt;class charT, class traits = char_traits&lt;charT>>
   class basic_string_view {
     public:
@@ -735,7 +739,9 @@ namespace experimental {
     const charT* data_;  // <em>exposition only</em>
     size_type    size_;  // <em>exposition only</em>
   };
-}</code></pre>
+}  // namespace fundamentals_v1
+}  // namespace experimental
+}  // namespace std</code></pre>
 
     <p>In every specialization <code>basic_string_view&lt;charT, traits></code>,
     the type <code>traits</code> shall satisfy the character traits
@@ -1145,10 +1151,10 @@ operator basic_string&lt;charT, traits, Allocator>() const;</code></pre>
 
     <h4 id="basic.string.hash">Add a subclause "x.10 Hash support [string.view.hash]"</h4>
 
-    <pre><code>template &lt;> struct hash&lt;string_view>;
-template &lt;> struct hash&lt;u16string_view>;
-template &lt;> struct hash&lt;u32string_view>;
-template &lt;> struct hash&lt;wstring_view>;</code></pre>
+    <pre><code>template &lt;> struct hash&lt;experimental::string_view>;
+template &lt;> struct hash&lt;experimental::u16string_view>;
+template &lt;> struct hash&lt;experimental::u32string_view>;
+template &lt;> struct hash&lt;experimental::wstring_view>;</code></pre>
     <p class="attribute"><i>Requires</i>: the template specializations shall
     meet the requirements of class template hash ([unord.hash]).</p>
 
