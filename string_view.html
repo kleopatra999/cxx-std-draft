@@ -585,17 +585,17 @@ namespace experimental {
 
   // [string.view.comparison], non-member basic_string_view comparison functions
   template&lt;class charT, class traits>
-  bool operator==(basic_string_view&lt;charT, traits> x, basic_string_view&lt;charT, traits> y) noexcept;
+  constexpr bool operator==(basic_string_view&lt;charT, traits> x, basic_string_view&lt;charT, traits> y) noexcept;
   template&lt;class charT, class traits>
-  bool operator!=(basic_string_view&lt;charT, traits> x, basic_string_view&lt;charT, traits> y) noexcept;
+  constexpr bool operator!=(basic_string_view&lt;charT, traits> x, basic_string_view&lt;charT, traits> y) noexcept;
   template&lt;class charT, class traits>
-  bool operator&lt; (basic_string_view&lt;charT, traits> x, basic_string_view&lt;charT, traits> y) noexcept;
+  constexpr bool operator&lt; (basic_string_view&lt;charT, traits> x, basic_string_view&lt;charT, traits> y) noexcept;
   template&lt;class charT, class traits>
-  bool operator> (basic_string_view&lt;charT, traits> x, basic_string_view&lt;charT, traits> y) noexcept;
+  constexpr bool operator> (basic_string_view&lt;charT, traits> x, basic_string_view&lt;charT, traits> y) noexcept;
   template&lt;class charT, class traits>
-  bool operator&lt;=(basic_string_view&lt;charT, traits> x, basic_string_view&lt;charT, traits> y) noexcept;
+  constexpr bool operator&lt;=(basic_string_view&lt;charT, traits> x, basic_string_view&lt;charT, traits> y) noexcept;
   template&lt;class charT, class traits>
-  bool operator>=(basic_string_view&lt;charT, traits> x, basic_string_view&lt;charT, traits> y) noexcept;
+  constexpr bool operator>=(basic_string_view&lt;charT, traits> x, basic_string_view&lt;charT, traits> y) noexcept;
   // [string.view.comparison], sufficient additional overloads of comparison functions
 
   // [string.view.nonmem], other non-member basic_string_view functions
@@ -698,38 +698,38 @@ namespace experimental {
     size_type copy(charT* s, size_type n, size_type pos = 0) const;
 
     constexpr basic_string_view substr(size_type pos=0, size_type n=npos) const;
-    int compare(basic_string_view s) const noexcept;
-    int compare(size_type pos1, size_type n1, basic_string_view s) const;
-    int compare(size_type pos1, size_type n1,
-                basic_string_view s, size_type pos2, size_type n2) const;
-    int compare(const charT* s) const;
-    int compare(size_type pos1, size_type n1, const charT* s) const;
-    int compare(size_type pos1, size_type n1,
-                const charT* s, size_type n2) const;
-    size_type find(basic_string_view s, size_type pos=0) const noexcept;
-    size_type find(charT c, size_type pos=0) const noexcept;
-    size_type find(const charT* s, size_type pos, size_type n) const;
-    size_type find(const charT* s, size_type pos=0) const;
-    size_type rfind(basic_string_view s, size_type pos=npos) const noexcept;
-    size_type rfind(charT c, size_type pos=npos) const noexcept;
-    size_type rfind(const charT* s, size_type pos, size_type n) const;
-    size_type rfind(const charT* s, size_type pos=npos) const;
-    size_type find_first_of(basic_string_view s, size_type pos=0) const noexcept;
-    size_type find_first_of(charT c, size_type pos=0) const noexcept;
-    size_type find_first_of(const charT* s, size_type pos, size_type n) const;
-    size_type find_first_of(const charT* s, size_type pos=0) const;
-    size_type find_last_of(basic_string_view s, size_type pos=npos) const noexcept;
-    size_type find_last_of(charT c, size_type pos=npos) const noexcept;
-    size_type find_last_of(const charT* s, size_type pos, size_type n) const;
-    size_type find_last_of(const charT* s, size_type pos=npos) const;
-    size_type find_first_not_of(basic_string_view s, size_type pos=0) const noexcept;
-    size_type find_first_not_of(charT c, size_type pos=0) const noexcept;
-    size_type find_first_not_of(const charT* s, size_type pos, size_type n) const;
-    size_type find_first_not_of(const charT* s, size_type pos=0) const;
-    size_type find_last_not_of(basic_string_view s, size_type pos=npos) const noexcept;
-    size_type find_last_not_of(charT c, size_type pos=npos) const noexcept;
-    size_type find_last_not_of(const charT* s, size_type pos, size_type n) const;
-    size_type find_last_not_of(const charT* s, size_type pos=npos) const;
+    constexpr int compare(basic_string_view s) const noexcept;
+    constexpr int compare(size_type pos1, size_type n1, basic_string_view s) const;
+    constexpr int compare(size_type pos1, size_type n1,
+                          basic_string_view s, size_type pos2, size_type n2) const;
+    constexpr int compare(const charT* s) const;
+    constexpr int compare(size_type pos1, size_type n1, const charT* s) const;
+    constexpr int compare(size_type pos1, size_type n1,
+                          const charT* s, size_type n2) const;
+    constexpr size_type find(basic_string_view s, size_type pos=0) const noexcept;
+    constexpr size_type find(charT c, size_type pos=0) const noexcept;
+    constexpr size_type find(const charT* s, size_type pos, size_type n) const;
+    constexpr size_type find(const charT* s, size_type pos=0) const;
+    constexpr size_type rfind(basic_string_view s, size_type pos=npos) const noexcept;
+    constexpr size_type rfind(charT c, size_type pos=npos) const noexcept;
+    constexpr size_type rfind(const charT* s, size_type pos, size_type n) const;
+    constexpr size_type rfind(const charT* s, size_type pos=npos) const;
+    constexpr size_type find_first_of(basic_string_view s, size_type pos=0) const noexcept;
+    constexpr size_type find_first_of(charT c, size_type pos=0) const noexcept;
+    constexpr size_type find_first_of(const charT* s, size_type pos, size_type n) const;
+    constexpr size_type find_first_of(const charT* s, size_type pos=0) const;
+    constexpr size_type find_last_of(basic_string_view s, size_type pos=npos) const noexcept;
+    constexpr size_type find_last_of(charT c, size_type pos=npos) const noexcept;
+    constexpr size_type find_last_of(const charT* s, size_type pos, size_type n) const;
+    constexpr size_type find_last_of(const charT* s, size_type pos=npos) const;
+    constexpr size_type find_first_not_of(basic_string_view s, size_type pos=0) const noexcept;
+    constexpr size_type find_first_not_of(charT c, size_type pos=0) const noexcept;
+    constexpr size_type find_first_not_of(const charT* s, size_type pos, size_type n) const;
+    constexpr size_type find_first_not_of(const charT* s, size_type pos=0) const;
+    constexpr size_type find_last_not_of(basic_string_view s, size_type pos=npos) const noexcept;
+    constexpr size_type find_last_not_of(charT c, size_type pos=npos) const noexcept;
+    constexpr size_type find_last_not_of(const charT* s, size_type pos, size_type n) const;
+    constexpr size_type find_last_not_of(const charT* s, size_type pos=npos) const;
 
    private:
     const charT* data_;  // <em>exposition only</em>
@@ -830,7 +830,7 @@ const_reverse_iterator crend() const noexcept;</code></pre>
     <p class="attribute"><i>Returns</i>: <code>size_</code>.</p>
 
     <pre><code>constexpr size_type max_size() const noexcept;</code></pre>
-    <p class="attribute"><i>Returns</i>: The length of the largest possible <code>basic_string_view</code>.</p>
+    <p class="attribute"><i>Returns</i>: The largest possible number of char-like objects that can be referred to by a <code>basic_string_view</code>.</p>
 
     <pre><code>constexpr bool empty() const noexcept;</code></pre>
     <p class="attribute"><i>Returns</i>: <code>size_ == 0</code>.</p>
@@ -924,7 +924,7 @@ operator basic_string&lt;charT, traits, Allocator>() const;</code></pre>
       <p><i>Returns</i>: <code>basic_string_view(data()+pos, <var>rlen</var>)</code>.</p>
     </div>
 
-    <pre><code>int compare(basic_string_view str) const noexcept;</code></pre>
+    <pre><code>constexpr int compare(basic_string_view str) const noexcept;</code></pre>
     <div class="attributes">
       <p><i>Effects</i>: Determines the effective length
       <code><var>rlen</var></code> of the strings to compare as the
@@ -942,18 +942,18 @@ operator basic_string&lt;charT, traits, Allocator>() const;</code></pre>
       </table>
     </div>
 
-    <pre><code>int compare(size_type pos1, size_type n1, basic_string_view str) const;</code></pre>
+    <pre><code>constexpr int compare(size_type pos1, size_type n1, basic_string_view str) const;</code></pre>
     <p class="attribute"><i>Effects</i>: Equivalent to <code>return substr(pos1, n1).compare(str)</code>.</p>
 
-    <pre><code>int compare(size_type pos1, size_type n1, basic_string_view str,
-            size_type pos2, size_type n2) const;</code></pre>
+    <pre><code>constexpr int compare(size_type pos1, size_type n1, basic_string_view str,
+                      size_type pos2, size_type n2) const;</code></pre>
     <p class="attribute"><i>Effects</i>: Equivalent to <code>return substr(pos1, n1).compare(str.substr(pos2, n2))</code>.</p>
-    <pre><code>int compare(const charT* s) const;</code></pre>
+    <pre><code>constexpr int compare(const charT* s) const;</code></pre>
     <p class="attribute"><i>Effects</i>: Equivalent to <code>return compare(basic_string_view(s))</code>.</p>
-    <pre><code>int compare(size_type pos1, size_type n1, const charT* s) const;</code></pre>
+    <pre><code>constexpr int compare(size_type pos1, size_type n1, const charT* s) const;</code></pre>
     <p class="attribute"><i>Effects</i>: Equivalent to <code>return substr(pos1, n1).compare(basic_string_view(s))</code>.</p>
-    <pre><code>int compare(size_type pos1, size_type n1,
-            const charT* s, size_type n2) const;</code></pre>
+    <pre><code>constexpr int compare(size_type pos1, size_type n1,
+                      const charT* s, size_type n2) const;</code></pre>
     <p class="attribute"><i>Effects</i>: Equivalent to <code>return substr(pos1, n1).compare(basic_string_view(s, n2))</code>.</p>
 
     <h5>Add a sub-subclause "x.6.1 Searching basic_string_view [string.view.find]"</h5>
@@ -962,18 +962,18 @@ operator basic_string&lt;charT, traits, Allocator>() const;</code></pre>
     at worst, although implementations are encouraged to do better.</p>
 
     <p>Each member function of the form</p>
-    <pre><code><var>return-type fx1</var>(const charT* s, size_type pos);</code></pre>
+    <pre><code>constexpr <var>return-type fx1</var>(const charT* s, size_type pos);</code></pre>
     <p>is equivalent to <code>return <var>fx1</var>(basic_string_view(s), pos)</code>.</p>
 
     <p>Each member function of the form</p>
-    <pre><code><var>return-type fx1</var>(const charT* s, size_type pos, size_type n); // find() variants</code></pre>
+    <pre><code>constexpr <var>return-type fx1</var>(const charT* s, size_type pos, size_type n); // find() variants</code></pre>
     <p>is equivalent to <code>return <var>fx1</var>(basic_string_view(s, n), pos)</code>.</p>
 
     <p>Each member function of the form</p>
-    <pre><code><var>return-type fx2</var>(charT c, size_type pos); // find() variants</code></pre>
+    <pre><code>constexpr <var>return-type fx2</var>(charT c, size_type pos); // find() variants</code></pre>
     <p>is equivalent to <code>return <var>fx2</var>(basic_string_view(&c, 1), pos)</code>.</p>
 
-    <pre><code>size_type find(basic_string_view str, size_type pos=0) const noexcept;</code></pre>
+    <pre><code>constexpr size_type find(basic_string_view str, size_type pos=0) const noexcept;</code></pre>
     <div class="attributes">
       <p><i>Effects</i>: Determines the lowest position <code><var>xpos</var></code>, if possible, such that the following conditions obtain:</p>
       <ul><li><code>pos &lt;= <var>xpos</var></code></li>
@@ -984,7 +984,7 @@ operator basic_string&lt;charT, traits, Allocator>() const;</code></pre>
       <p><i>Remarks</i>: Uses <code>traits::eq()</code>.</p>
     </div>
 
-    <pre><code>size_type rfind(basic_string_view str, size_type pos=npos) const noexcept;</code></pre>
+    <pre><code>constexpr size_type rfind(basic_string_view str, size_type pos=npos) const noexcept;</code></pre>
     <div class="attributes">
       <p><i>Effects</i>: Determines the highest position <code>xpos</code>, if possible, such that the following conditions obtain:</p>
       <ul><li><code>xpos &lt;= pos</code></li>
@@ -994,7 +994,7 @@ operator basic_string&lt;charT, traits, Allocator>() const;</code></pre>
       <p><i>Remarks</i>: Uses <code>traits::eq()</code>.</p>
     </div>
 
-    <pre><code>size_type find_first_of(basic_string_view str, size_type pos=0) const noexcept;</code></pre>
+    <pre><code>constexpr size_type find_first_of(basic_string_view str, size_type pos=0) const noexcept;</code></pre>
     <div class="attributes">
       <p><i>Effects</i>: Determines the lowest position <code>xpos</code>, if possible, such that the following conditions obtain:</p>
       <ul><li><code>pos &lt;= xpos</code></li>
@@ -1004,7 +1004,7 @@ operator basic_string&lt;charT, traits, Allocator>() const;</code></pre>
       <p><i>Remarks</i>: Uses <code>traits::eq()</code>.</p>
     </div>
 
-    <pre><code>size_type find_last_of(basic_string_view str, size_type pos=npos) const noexcept;</code></pre>
+    <pre><code>constexpr size_type find_last_of(basic_string_view str, size_type pos=npos) const noexcept;</code></pre>
     <div class="attributes">
       <p><i>Effects</i>: Determines the highest position <code>xpos</code>, if possible, such that the following conditions obtain:</p>
       <ul><li><code>xpos &lt;= pos</code></li>
@@ -1014,7 +1014,7 @@ operator basic_string&lt;charT, traits, Allocator>() const;</code></pre>
       <p><i>Remarks</i>: Uses <code>traits::eq()</code>.</p>
     </div>
 
-    <pre><code>size_type find_first_not_of(basic_string_view str, size_type pos=0) const noexcept;</code></pre>
+    <pre><code>constexpr size_type find_first_not_of(basic_string_view str, size_type pos=0) const noexcept;</code></pre>
     <div class="attributes">
       <p><i>Effects</i>: Determines the lowest position <code>xpos</code>, if possible, such that the following conditions obtain:</p>
       <ul><li><code>pos &lt;= xpos</code></li>
@@ -1024,7 +1024,7 @@ operator basic_string&lt;charT, traits, Allocator>() const;</code></pre>
       <p><i>Remarks</i>: Uses <code>traits::eq()</code>.</p>
     </div>
 
-    <pre><code>size_type find_last_not_of(basic_string_view str, size_type pos=npos) const noexcept;</code></pre>
+    <pre><code>constexpr size_type find_last_not_of(basic_string_view str, size_type pos=npos) const noexcept;</code></pre>
     <div class="attributes">
       <p><i>Effects</i>: Determines the highest position <code>xpos</code>, if possible, such that the following conditions obtain:</p>
       <ul><li><code>xpos &lt;= pos</code></li>
@@ -1063,50 +1063,53 @@ operator basic_string&lt;charT, traits, Allocator>() const;</code></pre>
     <p>[ Example: A sample conforming implementation for operator== would be:</p>
 <pre><code>  template&lt;class T> struct __identity { typedef T type; };
   template&lt;class charT, class traits>
-  bool operator==(basic_string_view&lt;charT, traits> lhs,
-                  basic_string_view&lt;charT, traits> rhs) noexcept {
+  constexpr bool operator==(
+      basic_string_view&lt;charT, traits> lhs,
+      basic_string_view&lt;charT, traits> rhs) noexcept {
     return lhs.compare(rhs) == 0;
   }
   template&lt;class charT, class traits>
-  bool operator==(basic_string_view&lt;charT, traits> lhs,
-                  typename __identity&lt;basic_string_view&lt;charT, traits>>::type rhs) noexcept {
+  constexpr bool operator==(
+      basic_string_view&lt;charT, traits> lhs,
+      typename __identity&lt;basic_string_view&lt;charT, traits>>::type rhs) noexcept {
     return lhs.compare(rhs) == 0;
   }
   template&lt;class charT, class traits>
-  bool operator==(typename __identity&lt;basic_string_view&lt;charT, traits>>::type lhs,
-                  basic_string_view&lt;charT, traits> rhs) noexcept {
+  constexpr bool operator==(
+      typename __identity&lt;basic_string_view&lt;charT, traits>>::type lhs,
+      basic_string_view&lt;charT, traits> rhs) noexcept {
     return lhs.compare(rhs) == 0;
 }</code></pre>
     <p>— end example ]</p>
 
 <pre><code>template&lt;class charT, class traits>
-  bool operator==(basic_string_view&lt;charT,traits> lhs,
-                  basic_string_view&lt;charT,traits> rhs) noexcept;</code></pre>
+  constexpr bool operator==(basic_string_view&lt;charT,traits> lhs,
+                            basic_string_view&lt;charT,traits> rhs) noexcept;</code></pre>
     <p class="attribute"><i>Returns</i>: <code>lhs.compare(rhs) == 0</code>.</p>
 
 <pre><code>template&lt;class charT, class traits>
-  bool operator!=(basic_string_view&lt;charT,traits> lhs,
-                  basic_string_view&lt;charT,traits> rhs) noexcept;</code></pre>
+  constexpr bool operator!=(basic_string_view&lt;charT,traits> lhs,
+                            basic_string_view&lt;charT,traits> rhs) noexcept;</code></pre>
     <p class="attribute"><i>Returns</i>: <code>!(lhs == rhs)</code>.</p>
 
 <pre><code>template&lt;class charT, class traits>
-  bool operator&lt; (basic_string_view&lt;charT,traits> lhs,
-                  basic_string_view&lt;charT,traits> rhs) noexcept;</code></pre>
+  constexpr bool operator&lt; (basic_string_view&lt;charT,traits> lhs,
+                            basic_string_view&lt;charT,traits> rhs) noexcept;</code></pre>
     <p class="attribute"><i>Returns</i>: <code>lhs.compare(rhs) &lt; 0</code>.</p>
 
 <pre><code>template&lt;class charT, class traits>
-  bool operator> (basic_string_view&lt;charT,traits> lhs,
-                  basic_string_view&lt;charT,traits> rhs) noexcept;</code></pre>
+  constexpr bool operator> (basic_string_view&lt;charT,traits> lhs,
+                            basic_string_view&lt;charT,traits> rhs) noexcept;</code></pre>
     <p class="attribute"><i>Returns</i>: <code>lhs.compare(rhs) > 0</code>.</p>
 
 <pre><code>template&lt;class charT, class traits>
-  bool operator&lt;=(basic_string_view&lt;charT,traits> lhs,
-                  basic_string_view&lt;charT,traits> rhs) noexcept;</code></pre>
+  constexpr bool operator&lt;=(basic_string_view&lt;charT,traits> lhs,
+                            basic_string_view&lt;charT,traits> rhs) noexcept;</code></pre>
     <p class="attribute"><i>Returns</i>: <code>lhs.compare(rhs) &lt;= 0</code>.</p>
 
 <pre><code>template&lt;class charT, class traits>
-  bool operator>=(basic_string_view&lt;charT,traits> lhs,
-                  basic_string_view&lt;charT,traits> rhs) noexcept;</code></pre>
+  constexpr bool operator>=(basic_string_view&lt;charT,traits> lhs,
+                            basic_string_view&lt;charT,traits> rhs) noexcept;</code></pre>
     <p class="attribute"><i>Returns</i>: <code>lhs.compare(rhs) >= 0</code>.</p>
 
     <h4 id="string.view.nonmem">Add a subclause "x.8 Other basic_string_view non-member functions [string.view.nonmem]"</h4>
