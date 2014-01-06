@@ -811,7 +811,7 @@ basic_string_view(const basic_string&lt;charT, traits, Allocator>& str) noexcept
 
     <pre><code>constexpr const_iterator begin() const noexcept;
 constexpr const_iterator cbegin() const noexcept;</code></pre>
-    <p class="attribute"><i>Returns</i>: An iterator such that <code>&*begin() == data_</code> if <code>&*begin()</code> is a valid expression, or else an unspecified value such that [<code>begin()</code>,<code>end()</code>) is a valid range.</p>
+    <p class="attribute"><i>Returns</i>: An iterator such that <code>&*begin() == data_</code> if <code>*data_</code> is a valid expression and <code>!empty()</code>, or else an unspecified value such that [<code>begin()</code>,<code>end()</code>) is a valid range.</p>
 
     <pre><code>constexpr const_iterator end() const noexcept;
 constexpr const_iterator cend() const noexcept;</code></pre>
