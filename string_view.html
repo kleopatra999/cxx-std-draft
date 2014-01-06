@@ -3,7 +3,7 @@
   <head>
     <meta content="text/html;charset=UTF-8" http-equiv="Content-Type"/>
     <meta charset="UTF-8"/>
-    <title>string_view: a non-owning reference to a string, revision 5</title>
+    <title>string_view: a non-owning reference to a string, revision 6</title>
 <style type="text/css">
 body {color: #000000; background-color: #FFFFFF;}
 
@@ -73,7 +73,7 @@ div.ednote {display: inline-block; margin-left: 1ex; border: thin solid #fb6;
         <p>Jeffrey Yasskin &lt;<a href="mailto:jyasskin@google.com">jyasskin@google.com</a>&gt;</p>
       </address>
     </div>
-    <h1><code>string_view</code>: a non-owning reference to a string, revision 5</h1>
+    <h1><code>string_view</code>: a non-owning reference to a string, revision 6</h1>
   </header>
   <p><small><a href="#maincontent">Skip table of contents</a></small></p>
   <nav id="toc"></nav>
@@ -557,7 +557,7 @@ string_view str(space);</code></pre>
     <h3 id="strings">Clause x, string_view</h3>
 
     <p>The class template <code>basic_string_view</code> describes objects that
-    can refer to a constant contiguous sequence of char-like ([strings.general]) objects
+    can refer to a constant contiguous sequence of char-like (C++11[strings.general]) objects
     with the first element of
     the sequence at position zero. In the rest of this Clause, the type of the
     char-like objects held in a <code>basic_string_view</code>
@@ -628,10 +628,10 @@ inline namespace fundamentals_v1 {
   template &lt;> struct hash&lt;experimental::wstring_view>;
 }  // namespace std</code></pre>
 
-    <p>The function templates defined in [utility.swap] and [iterator.range] are
+    <p>The function templates defined in C++11[utility.swap] and C++11[iterator.range] are
     available when <code>&lt;string_view></code> is included.</p>
 
-    <div class="ednote"><p>Normally I would update the list in [iterator.range], but we're not yet sure how to do that in a TS, so I picked the more self-contained option.</p></div>
+    <div class="ednote"><p>Normally I would update the list in C++11[iterator.range], but we're not yet sure how to do that in a TS, so I picked the more self-contained option.</p></div>
 
      <pre><code>namespace std {
 namespace experimental {
@@ -663,7 +663,7 @@ namespace fundamentals_v1 {
     constexpr basic_string_view(const charT* str);</code></pre>
     <div class="ednote"><p>The above constructor is constexpr to take advantage of user-written traits classes that might provide a constexpr <code>length()</code> function.  It can't be part of a constant expression with <code>std::char_traits&lt;char></code> without changes to that class.</p></div>
 <pre><code>    constexpr basic_string_view(const charT* str, size_type len);</code></pre>
-    <div class="ednote"><p>No initializer_list constructor because [dcl.init.list]p6 says it would likely store a dangling reference into the <code>basic_string_view</code>.</p></div>
+    <div class="ednote"><p>No initializer_list constructor because C++11[dcl.init.list]p6 says it would likely store a dangling reference into the <code>basic_string_view</code>.</p></div>
 
 <pre><code>    // [string.view.iterators], iterators
     constexpr const_iterator begin() const noexcept;
@@ -745,7 +745,7 @@ namespace fundamentals_v1 {
 
     <p>In every specialization <code>basic_string_view&lt;charT, traits></code>,
     the type <code>traits</code> shall satisfy the character traits
-    requirements ([char.traits]), and the type <code>traits::char_type</code>
+    requirements (C++11[char.traits]), and the type <code>traits::char_type</code>
     shall name the same type as <code>charT</code>.</p>
 
     <h4>Add a subclause "x.1 basic_string_view constructors and assignment operators  [string.view.cons]"</h4>
@@ -804,7 +804,7 @@ basic_string_view(const basic_string&lt;charT, traits, Allocator>& str) noexcept
       <p>For a <code>basic_string_view str</code>, any operation that invalidates a pointer in
       the range [<code>str.data()</code>, <code>str.data()+str.size()</code>) invalidates pointers,
       iterators, and references returned from <code>str</code>'s methods.</p>
-      <p>All requirements on container iterators ([container.requirements])
+      <p>All requirements on container iterators (C++11[container.requirements])
       apply to <code>basic_string_view::const_iterator</code> as well.</p>
     </div>
 
@@ -1138,10 +1138,10 @@ operator basic_string&lt;charT, traits, Allocator>() const;</code></pre>
                basic_string_view&lt;charT,traits> str);</code></pre>
     <div class="attributes">
       <p><i>Effects</i>: Behaves as a formatted output function
-      ([ostream.formatted.reqmts]) of <code>os</code>. Forms a character
+      (C++11[ostream.formatted.reqmts]) of <code>os</code>. Forms a character
       sequence <code>seq</code>, initially consisting of the elements defined by
       the range <code>[str.begin(), str.end())</code>. Determines padding for
-      <code>seq</code> as described in [ostream.formatted.reqmts]. Then inserts
+      <code>seq</code> as described in C++11[ostream.formatted.reqmts]. Then inserts
       <code>seq</code> as if by calling <code>os.rdbuf()->sputn(seq, n)</code>,
       where <code>n</code> is the larger of <code>os.width()</code> and
       <code>str.size()</code>; then calls <code>os.width(0)</code>.</p>
@@ -1156,7 +1156,7 @@ template &lt;> struct hash&lt;experimental::u16string_view>;
 template &lt;> struct hash&lt;experimental::u32string_view>;
 template &lt;> struct hash&lt;experimental::wstring_view>;</code></pre>
     <p class="attribute"><i>Requires</i>: the template specializations shall
-    meet the requirements of class template hash ([unord.hash]).</p>
+    meet the requirements of class template hash (C++11[unord.hash]).</p>
 
   </section>
 
