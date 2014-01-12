@@ -67,8 +67,8 @@ div.ednote {display: inline-block; margin-left: 1ex; border: thin solid #fb6;
 <body>
   <header>
     <div class="docinfo">
-      <p>ISO/IEC JTC1 SC22 WG21 N????</p>
-      <p>Date: <time pubdate="">2013-10-07</time></p>
+      <p>ISO/IEC JTC1 SC22 WG21 D3849</p>
+      <p>Date: <time pubdate="">2014-01-13</time></p>
       <address>
         <p>Jeffrey Yasskin &lt;<a href="mailto:jyasskin@google.com">jyasskin@google.com</a>&gt;</p>
       </address>
@@ -497,7 +497,17 @@ string_view str(space);</code></pre>
 
   <section>
     <h2 id="revision-history">Paper revision history</h2>
-    <p>This paper updates N3685 by removing other standard library updates so
+    <p>This paper updates N3762 by:</p>
+    <ul>
+      <li>Explaining why <code>string_view().data() != nullptr</code>,</li>
+      <li>Fixing up references and namespaces to match the Fundamentals TS,</li>
+      <li>Declaring every function as <code>constexpr</code> that
+      could be a constant expression if the <code>traits</code> class
+      is suitable, and</li>
+      <li>Adding exposition-only <code>data_</code> and <code>size_</code> members, and re-explaining several members in terms of them.</li>
+    </ul>
+
+    <p><a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2013/n3762.html">N3762</a> updated N3685 by removing other standard library updates so
     that the core <code>string_view</code> class can be accepted independently.
     I've also:</p>
     <ul>
