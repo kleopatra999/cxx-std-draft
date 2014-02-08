@@ -1,7 +1,7 @@
 <html>
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
-    <title>Hashing User-Defined Types in C++1y</title>
+    <title>Hashing User-Defined Types in C++1y: An Update to N3333</title>
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js" type="text/javascript"></script>
 <script type="text/javascript">//<![CDATA[
 $(function() {
@@ -135,20 +135,21 @@ ol ol {list-style-type: lower-latin}
   </head>
 <body>
 <address>
-  <p>Document number: N3333=12-0023</p>
-  <p>Date: <time pubdate="">2012-01-13</time></p>
+  <p>Document number: TBD</p>
+  <p>Date: <time pubdate="">2014-02-10</time></p>
   <p>Jeffrey Yasskin &lt;<a href="mailto:jyasskin@google.com">jyasskin@google.com</a>&gt;</p>
   <p>Chandler Carruth &lt;<a href="mailto:chandlerc@google.com">chandlerc@google.com</a>&gt;</p>
+  <p>Geoff Pike &lt;<a href="mailto:gpike@google.com">gpike@google.com</a>&gt;</p>
 </address>
 
-<h1><a name="hashing">Hashing User-Defined Types in C++1y</a></h1>
+<h1><a name="hashing">Hashing User-Defined Types in C++1y: An Update to N3333</a></h1>
 
 <nav id="toc"></nav>
 
 <section>
-<h2><a name="background">Background</a></h2>
+<h2><a name="background">Background and Motivation</a></h2>
 
-<p>C++11 defined a set of standard hashing containers, which rely on a specialization of <code>std::hash&lt;KeyType&gt;</code> to exist in order to hash their keys. However, we provided no help to users trying to implement this hash function. We also required them to specialize a template in <code>namespace std</code> as opposed to the namespace their code actually lives in. This leads to confused users and weak hash functions. For example:</p>
+<p>C++11 defined a set of standard hashing containers, which rely on a specialization of <code>std::hash&lt;KeyType&gt;</code> to exist in order to hash their keys. However, we provided no help to programmers trying to implement this hash function. We also required them to specialize a template in <code>namespace std</code> as opposed to the namespace their code actually lives in. This leads to confused programmers and weak hash functions. For example:</p>
 <pre class="example"><code>namespace my_namespace {
   struct OtherType; // Defined elsewhere.
   struct MyType {
@@ -169,25 +170,38 @@ namespace std {
   };
 }</code></pre>
 
-<p>This paper proposes an improvement to the situation. But first a digression on the purpose of "hash" functions:</p>
+<p>The most common problems could be solved by allowing programmers to
+specify on which data a hash function should typically operate. In the
+above example, it seems that a hash function for <code>MyType</code>
+should operate on <code>field1</code>, <code>field2</code>,
+and <code>field3</code>, but the programmer had to specify much more,
+namely, an algorithm.</p>
+
+<p>This paper proposes improvements to the current situation.</p>
+
+<!-- <p>But first, a digression on the purpose of "hash" functions.</p> -->
 </section>
 
 <section>
-<h2><a name="fingerprinting">Hashing vs Fingerprinting</a></h2>
-<p>There are several uses for this thing we refer to as hashing.</p>
+<h2><a name="fingerprinting">Varieties of Hashing</a></h2>
+<p>Hashing is tremendously useful:</p>
 
 <ol>
   <li>The use in the standard library is to look things up in a hash table that is local to the current process.</li>
   <li>We may want to build a similar table that's distributed across several machines running either several copies of the same binary, or several binaries.</li>
   <li>We may also want to save the table to disk and keep it for several years.</li>
   <li>We might hash some strings, and then compare <em>just</em> the hash values, trusting probability to protect us from collisions.</li>
-  <li>We might wish to use the hash as part of a security-sensitive system. This generally requires a cryptographic hash.</li>
+  <li>We might wish to use the hash as part of a security-sensitive system. This generally requires message authentication codes, e.g., VHASH, or secure hashing, e.g., SHA-1.</li>
 </ol>
-<p>No single algorithm is optimal for all of the above use cases. If we try to make <code>std::hash&lt;&gt;</code> fill all of those roles, it will be the wrong choice for all of them instead.</p>
+<!-- <p>No single algorithm is optimal for all of the above use cases. If we try to make <code>std::hash&lt;&gt;</code> fill all of those roles, it will be the wrong choice for all of them instead.</p> -->
 
-<p>This paper proposes that <code>std::hash&lt;&gt;</code> be designed for only the first use in the above list, and focuses on making it as simple as possible for the average user of standard library hashing containers. A later paper is likely to explore the more sophisticated interface needed to make user-defined types visible to other "fingerprinting" algorithms.</p>
+<p>In practice, no hash function is ideal for all situations.
+This paper proposes that <code>std::hash&lt;&gt;</code> be designed
+for only the first use in the above list. The next few sections of
+this paper focus on <code>std::hash&lt;&gt;</code>, and how to explain
+best practices to the average user of unordered containers.  Later in the paper we propose a way to provide SHA-1 and similar.</p>
 
-<p>Hash tables only require that <code>std::hash&lt;T&gt;()(object)</code> return a stable value within a single program execution. In theory this allows the standard library to improve the hash implementation over time. However, we found at Google that without very clear documentation, we upgrade hash implementations rarely enough that developers save the values to disk anyway, which causes upgrades to break code. Therefore, we propose that hash functions <strong>return a different value in different processes</strong>, not just in different implementations, so that programs fail fast when they're incorrect. This has the secondary benefit that it frustrates pre-calculated collision tables used for denial-of-service attacks.</p>
+<p>Hash tables only require that <code>std::hash&lt;T&gt;()(object)</code> return a stable value within a single program execution. In theory this allows the standard library to improve the hash implementation over time. However, we found at Google that without very clear documentation, we upgrade hash implementations rarely enough that developers save the values to disk anyway, which causes upgrades to break code. Therefore, we propose that hash functions <strong>return a different value in different processes</strong>, not just in different implementations, so that programs fail fast when they're incorrect.<!-- This has the secondary benefit that it frustrates pre-calculated collision tables used for denial-of-service attacks. --></p>
 </section>
 
 <section>
@@ -256,12 +270,13 @@ hash_value(value);</code></pre>
 
 <ol>
   <li><code>hash_combine(args...)</code> interacts with user-defined types by calling unqualified <code>hash_value()</code> on them.</li>
-  <li>Within the same process, if <code>all_of((args1 == args2)...)</code> then <code>hash_combine(args1...) == hash_combine(args2...)</code>.</li>
-  <li>If two calls to <code>hash_combine()</code> aren't defined to return equal values, then their return values must be completely different with high probability See <a href="http://en.wikipedia.org/wiki/Avalanche_effect">http://en.wikipedia.org/wiki/Avalanche_effect</a> for a possible (but not the only possible) meaning of "completely different with high probability". Situations that don't require equal <code>hash_combine</code> results include:
+  <li>Within the same process, if <code>all_of((args1 == args2)...)</code> then <code>hash_combine(args1...) == hash_combine(args2...)</code>.</li><!-- Bug? What if the user-provided operator== does something weird? Given the previous bullet, should this one be predicated on all_of((hash_value(args1) == hash_value(args2)...)?  -->
+  <li>If two calls to <code>hash_combine()</code> aren't defined to return equal values, then their return values must be markedly different with high probability See <a href="http://en.wikipedia.org/wiki/Avalanche_effect">http://en.wikipedia.org/wiki/Avalanche_effect</a> for a possible (but not the only possible) meaning of "markedly different with high probability." Some situations that don't require equal results include:
   <ol>
-    <li>changing a single bit in any of <code>hash_combine()</code>'s arguments. (This includes changing <code>hash_combine(false)</code> to <code>hash_combine(true)</code>.)</li>
-    <li>calling <code>hash_combine</code> in a different execution of the same binary.</li>
-    <li>Replacing <code>hash_combine(arg1, arg2, arg3)</code> with <code>hash_combine(hash_combine(arg1, arg2), arg3)</code></li>
+    <li><code>hash_combine()</code>'s with different arguments, regardless of how similar the argument lists are. E.g., <code>hash_combine(0xabcd1234)</code> vs. <code>hash_combine(0xabcd0234)</code>.</li>
+    <li><code>hash_combine(arg1, arg2, arg3)</code> vs. <code>hash_combine(hash_combine(arg1, arg2), arg3)</code> or <code>hash_combine(std::make_tuple(arg1, arg2, arg3))</code>.</li>
+    <li><code>hash_combine(t)</code> vs. <code>hash_combine(std::make_optional(t))</code>.</li>
+    <li><code>hash_combine</code> in a different execution of the same binary.</li>
   </ol>
   </li>
 </ol>
@@ -315,7 +330,9 @@ hash_combine(...) {
                                InputIterator last);
 }</code></pre>
 
-<p>which combines hashes for each element in the range. If we had a <code>std::range&lt;Iterator&gt;</code> object, we could define <code>hash_value(std::range)</code> directly in terms of this. The semantics of the combining for both <code>hash_combine</code> and <code>hash_combine_range</code> are the same, leading to the following invariants:</p>
+<p>which combines hashes for each element in the range.
+<!--
+ If we had a <code>std::range&lt;Iterator&gt;</code> object, we could define <code>hash_value(std::range)</code> directly in terms of this. The semantics of the combining for both <code>hash_combine</code> and <code>hash_combine_range</code> are the same, leading to the following invariants:</p>
 <pre class="example"><code>std::vector&lt;int&gt; v = {1, 2, 3};
 assert(std::hash_combine(1, 2, 3) ==
        std::hash_combine_range(v.begin(), v.end()));
@@ -327,10 +344,22 @@ high_probability(std::hash_combine(1, 2, 3) !=
 assert(std::hash_combine(1, 2, 3) != std::hash_combine(v));</code></pre>
 
 <p>Note that this requires that ranges of equal values hash equally, even if they have different types. This could require more implementation complexity in implementations that want to hash ranges of characters very efficiently, but it appears doable.</p>
+-->
+
+Echoing the philosophy that different types encoding the same
+underlying values will hash to different values, we expect
+implementations to offer no guarantee that values returned
+by <code>hash_combine()</code> could be generated by <code>hash_combine_range()</code>.  E.g.,
+<pre class="example"><code>std::vector&lt;int&gt; v = {1, 2, 3};
+high_probability(std::hash_combine(1, 2, 3) !=
+                 std::hash_combine_range(v.begin(), v.end()));
+</code></pre>
+
 </section>
 
 <section>
 <h3><a name="hash_as_bytes">Hashing objects as byte arrays</a></h3>
+<!-- needs update? -->
 <p>Users may also want to improve efficiency by hashing several sequential standard-layout and trivially-copyable fields as a single byte array, rather than passing them each individually to <code>hash_combine</code>. Unfortunately, those requirements aren't enough: the fields also have to be free of padding. To handle this, we propose the following type trait and a third hashing function.</p>
 
 <pre class="implementation"><code>namespace std {
@@ -357,6 +386,7 @@ return hash_range(addr, addr + sizeof(obj));</code></pre>
 
 <section>
 <h3><a name="hash_code">The <code>hash_code</code> type</a></h3>
+<!-- needs update? -->
 <p>The authors of this paper initially believed that having all intermediate hash values bottleneck through <code>size_t</code> would increase the collision rate and reduce performance. Geoff Pike and Austin Appleby agreed that <code>size_t</code> does increase the collision rate and reduce performance slightly, but not enough to justify the extra complexity of avoiding it. So, algorithmically, it would be fine to have all hash functions return <code>size_t</code>.</p>
 
 <p>However, Austin argued that "if <code><var>hash</var>()</code> doesn't behave like a function in the mathematical '<code>y = f(x)</code>' sense due to the intentionally unstable implementation, then <code>hash_code</code> should not behave like a number and should be as opaque as possible" in order to avoid user confusion. We've decided to have the three hash utility functions return a new <code>hash_code</code> object:</p>
@@ -382,13 +412,65 @@ return hash_range(addr, addr + sizeof(obj));</code></pre>
 </section>
 
 <section>
+<h2><a name="future">Other hashes</a></h2>
+Earlier we mentioned the need for hash functions that, for example, are stable over time.  In contrast to our recommendation for <code>std::hash</code>, we recommend fully specifying some other
+
+hash functions, such as SHA-1, modulo the fact that each
+type, <code>T</code> that shall be hashed by SHA-1 needs code
+analogous to that underlying <code>std::hash&lt;T&gt;</code>.  A parallel set of names allows all the above functionality:
+<ol>
+  <li><code>sha1_hash</code> instead of <code>hash</code>
+  <li><code>sha1_hash_value</code> instead of <code>hash_value</code>
+  <li><code>sha1_hash_combine</code> instead of <code>hash_combine</code>
+  <li><code>sha1_hash_range</code> instead of <code>hash_range</code>
+  <li><code>sha1_hash_as_bytes</code> instead of <code>hash_as_bytes</code>
+</ol>
+The well-established definition of SHA-1 inputs a sequence of bytes,
+so only a subset of the <code>sha1_hash_...</code> functions will have a completely obvious definition.
+Our spec for things like <code>sha1_hash_combine(397, 712,
+make_pair('x', "abc"))</code> will require some work.  However, it should be
+straighforward to write precise rules that maintain the spirit of secure hashing to which SHA-1 aspires.  That said, we will promise nothing about cryptographic security, defense against timing
+attacks, etc.
+
+We also recommend offering more, because SHA-1 is hardly the only
+well-used hash function that programmers will desire.  For example, we
+would like to incorporate SHA-256, SHA-3, MD5, MD4, and perhaps
+more. Each will necessitate all of the above names referring to SHA-1
+to be provided again, but with a prefix other than <code>sha1</code>.
+
+For user-defined types that want to be allow hashing via several (or all) of these
+many options, programmers might choose to write something like this:
+<pre class="example"><code>namespace my_namespace {
+  struct OtherType { ... };
+  struct MyType {
+    OtherType field1;
+    int field2;
+    char field3[500];
+    float field4;  // Does not contribute to equality.
+
+    auto ValuesToHash() const { return std::tie(field1, field2, field3); }
+  };
+
+  std::hash_code hash_value(const MyType&amp; v) { return std::hash_combine(v.ValuesToHash()); }
+  std::sha1_hash_code sha1_hash_value(const MyType&amp; v) { return std::sha1_hash_combine(v.ValuesToHash()); }
+  std::sha3_hash_code sha3_hash_value(const MyType&amp; v) { return std::sha3_hash_combine(v.ValuesToHash()); }
+  std::md5_hash_code md5_hash_value(const MyType&amp; v) { return std::md5_hash_combine(v.ValuesToHash()); }
+  // etc.
+}</code></pre>
+
+
+
+<section>
 <h2><a name="future">Future work</a></h2>
+<p>The repetitive code at the end of the last example suggests an opportunity.</p>
+<!--
 <p>A single hash function that's easy to implement isn't enough for all use cases. The standard library should offer a collection of stable Fingerprint algorithms so that users can share their results between different implementation, and get more specialized characteristics in the output. These algorithms need a way to traverse user-defined types, and the above <code>hash_value()</code> function doesn't directly generalize. It is outside the scope of this paper to discuss approaches to generic fingerprinting algorithms.</p>
+-->
 </section>
 
 <section>
 <h2><a name="acknowledgements">Acknowledgements</a></h2>
-<p>Thanks to Geoff Pike (the author of CityHash) and Austin Appleby (the author of MurmurHash) for providing expert guidance. Thanks to Lawrence Crowl, Matt Austern, and Richard Smith for helping with the C++ interfaces and editing this paper.</p>
+<p>Thanks to Austin Appleby, the author of MurmurHash, for providing expert guidance. Thanks to Lawrence Crowl, Matt Austern, and Richard Smith for helping with the C++ interfaces and editing this paper.</p>
 </section>
 
 </body>
