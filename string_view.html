@@ -67,8 +67,8 @@ div.ednote {display: inline-block; margin-left: 1ex; border: thin solid #fb6;
 <body>
   <header>
     <div class="docinfo">
-      <p>ISO/IEC JTC1 SC22 WG21 D3849</p>
-      <p>Date: <time pubdate="">2014-01-13</time></p>
+      <p>ISO/IEC JTC1 SC22 WG21 N3849</p>
+      <p>Date: <time pubdate="">2014-01-20</time></p>
       <address>
         <p>Jeffrey Yasskin &lt;<a href="mailto:jyasskin@google.com">jyasskin@google.com</a>&gt;</p>
       </address>
@@ -479,6 +479,15 @@ string_view str(space);</code></pre>
       <code>data()==nullptr</code> to identify a default-constructed
       <code>string_view</code> on that implementation, and would then be unable
       to use another implementation.</p>
+
+      <p>However, <code>std::vector::data()</code> may return
+      <code>nullptr</code>, and we don't have
+      <code>contiguous_iterator_tag</code> available yet to allow users to pass
+      a <code>vector</code>'s <code>begin()</code> and <code>end()</code> to
+      <code>string_view()</code>, so this requirement may require extra
+      conditions in user code. This and strong interest on the std-proposals
+      mailing list encouraged me to add an <a
+      href="#alternate-nullptr-wording">alternate wording</a> section below.</p>
     </section>
   </section>
 
@@ -499,7 +508,9 @@ string_view str(space);</code></pre>
     <h2 id="revision-history">Paper revision history</h2>
     <p>This paper updates N3762 by:</p>
     <ul>
-      <li>Explaining why <code>string_view().data() != nullptr</code>,</li>
+      <li>Explaining why <code>string_view().data() != nullptr</code> and adding
+      an alternate wording section in case we decide that should be
+      possible,</li>
       <li>Fixing up references and namespaces to match the Fundamentals TS,</li>
       <li>Declaring every function as <code>constexpr</code> that
       could be a constant expression if the <code>traits</code> class
@@ -1168,6 +1179,54 @@ template &lt;> struct hash&lt;experimental::wstring_view>;</code></pre>
     <p class="attribute"><i>Requires</i>: the template specializations shall
     meet the requirements of class template hash (C++11[unord.hash]).</p>
 
+  </section>
+
+  <section class="wording">
+    <h2 id="alternate-nullptr-wording">Alternate wording if <code>data()</code> may be <code>nullptr</code></h2>
+    <p>This section lists changes to the <a href="#wording">proposed wording</a>
+    if the LWG prefers to allow "null" <code>string_view</code>s.</p>
+
+    <h3>In subclause "x.1 basic_string_view constructors and assignment operators  [string.view.cons]"</h3>
+
+    <pre><code>constexpr basic_string_view() noexcept;</code></pre>
+    <div class="attributes">
+      <p><i>Effects</i>: Constructs an empty <code>basic_string_view</code>.</p>
+      <p><i>Postcondition</i>: <code>size_ == 0</code>, and <ins><code>data_ == nullptr</code>.</ins><del><code>data_</code> has an unspecified, non-null value such that [<code>data_</code>,<code>data_</code>) is a valid range.</del></p>
+      <div class="ednote"><p>Alternately, we could leave <code>data_</code>
+      unspecified-but-valid, but I worry about portability in that
+      case.</p></div>
+    </div>
+
+    <pre><code>constexpr basic_string_view(const charT* str, size_type len);</code></pre>
+    <div class="attributes">
+      <p><i>Requires</i>: <del><code>str</code> is not a null pointer and </del>[<code>str</code>,<code>str + len</code>) is a valid range.</p>
+      <p><i>Effects</i>: Constructs a <code>basic_string_view</code>, with the postconditions in Table [tab:string.view.ctr.3]</p>
+      <table><caption>Table [tab:string.view.ctr.3] — basic_string_view(const charT*, size_type) effects</caption>
+      <tr><th>Element</th><th>Value</th></tr>
+      <tr><td><code>data_</code></td><td><code>str</code></td></tr>
+      <tr><td><code>size_</code></td><td><code>len</code></td></tr>
+      </table>
+    </div>
+
+    <h3>In subclause "x.4 basic_string_view element access [string.view.access]"</h3>
+
+    <pre><code>constexpr const charT* data() const noexcept;</code></pre>
+    <div class="attributes">
+      <p><i>Returns</i>: <code>data_</code></p>
+      <p>[ Note: Unlike <code>std::string::data()</code> and string literals, <code>data()</code> may
+      return a pointer to a buffer that is not null-terminated. Therefore it is
+      typically a mistake to pass <code>data()</code> to a routine that takes just a
+      <code>const charT*</code> and expects a null-terminated string. — end note ]</p>
+      <div class="ednote"><p>We could specify that if <code>size_==0</code> then
+      <code>data()</code> simply returns a valid pointer value, and not
+      necessarily <code>data_</code>.  This would let debugging implementations
+      prevent developers from depending on a passed-through null value, but
+      would prevent <a
+      href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2013/n3593.html#delimiters">the
+      <code>std::split()</code> proposal's Delimiters</a> from using
+      <code>string_view</code> to represent a 0-length position within a string
+      at which to split.</p></div>
+    </div>
   </section>
 
   <section>
