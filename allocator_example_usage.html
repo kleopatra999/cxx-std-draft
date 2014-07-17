@@ -1,0 +1,317 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN">
+<html>
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <title>Allocator example: A simple arena allocator</title>
+    <link type="text/css" rel="stylesheet" href="allocator_guide.css">
+  </head>
+
+  <!--
+        TODO
+        ====
+
+        * Explain offset pointers better and whether/how they need (stateful?) allocators.
+
+        * Make the demonstration of scoped_allocator_adaptor clearer and more general.
+
+
+        Revision history
+        ================
+
+        2014-06-22: First draft [tkoeppe]
+        2014-06-23: Revisions, incorporating feedback from JW [tkoeppe]
+        2014-07-16: Add links to examples, and examples.
+
+  -->
+
+  <body>
+    <div class="docinfo">
+      <!-- p>ISO/IEC JTC1 SC22 WG21 N????</p -->
+      <p>Date: 2014-07-16</p>
+      <address>Thomas K&ouml;ppe &lt;<a href="mailto:tkoeppe@google.com">tkoeppe@google.com</a>&gt;</address>
+    </div>
+
+    <h1>Allocator example: A simple arena allocator</h1>
+    <p>Part of the <a href="allocator_user_guide.html">Visitor&rsquo;s Guide to C++ Allocators</a></p>
+
+    <h2>An arena</h2>
+
+    <p>We will develop a simple, yet non-trivial, stateful allocator which fetches memory from an existing
+      <em>arena</em>, i.e. a pre-allocated chunk of memory. For this example, our arena will simply dole
+      out memory monotonically until it is exhausted, at which point it will throw an exception.</p>
+
+    <p>Before we dive into allocators, let us design the arena. For the sake of illustration we include
+      chatty messages that comment on the arena&rsquo;s operation. The arena class will be unmovable and
+      unassignable.</p>
+
+    <div class="code strictpre">#include &lt;cstddef&gt;
+#include &lt;iostream&gt;
+#include &lt;stdexcept&gt;
+
+class Arena
+{
+    unsigned char * const data;
+    std::size_t const size;
+    std::size_t offset;
+
+public:
+    explicit Arena(std::size_t s)
+    : data(static_cast&lt;unsigned char *&gt;(::operator new(s)))
+    , size(s)
+    , offset(0)
+    {
+        std::cout &lt;&lt; "arena[" &lt;&lt; this &lt;&lt; "] of size " &lt;&lt; size &lt;&lt; " created.\n";
+    }
+
+    Arena(Arena const &amp;) = delete;
+    Arena &amp; operator=(Arena const &amp;) = delete;
+
+    ~Arena()
+    {
+        std::cout &lt;&lt; "arena[" &lt;&lt; this &lt;&lt; "] destroyed; final fill level was: " &lt;&lt; offset &lt;&lt; "\n";
+        ::operator delete(data);
+    }
+
+    void * allocate(std::size_t n, std::size_t a)
+    {
+        std::cout &lt;&lt; "arena[" &lt;&lt; this &lt;&lt; "] allocating " &lt;&lt; n &lt;&lt; " bytes.\n";
+
+        offset = (offset + a - 1) / a * a;
+
+        if (offset + n &gt; size)
+        {
+            throw std::bad_alloc();
+        }
+
+        void * result = data + offset;
+        offset += n;
+        return result;
+    }
+
+    void deallocate(void *, std::size_t n)
+    {
+        std::cout &lt;&lt; "arena[" &lt;&lt; this &lt;&lt; "] may deallocate " &lt;&lt; n &lt;&lt; " bytes.\n";
+    }
+};</div>
+
+    <p>A few words on the details. The memory is obtained from the global allocation function
+      <code>::operator new</code>. This is guaranteed to be maximally aligned. The arena doles
+      out memory of size <code>n</code> and alignment <code>a</code> in the <code>allocate</code>
+      function. The running offset is rounded up to the desired alignment and the address at
+      that offset is returned to the user; the offset is further incremented by the size of the
+      allocation. There is no meaningful deallocation. Had we made the allocation simpler and
+      always rounded up to the fixed maximal alignment (i.e. <code>alignof(std::max_align_t)</code>),
+      we could conceivably have supported shrinking the arena from the back, but this is not
+      important. The <code>allocate</code> function throws an exception if there is no more
+      space.</p>
+
+    <h2>The allocator</h2>
+
+    <p>We now design a stateful allocator that obtains its memory from an arena. Thanks to the
+      defaults provided by <code>std::allocator_traits</code>, we only need to fill in a minimal
+      set of information.</p>
+
+    <div class="code strictpre">#include &lt;type_traits&gt;
+
+template &lt;typename T&gt;
+struct ArenaAllocator
+{
+    template &lt;typename U&gt; friend struct ArenaAllocator;
+
+    using value_type = T;
+    using pointer = T *;
+
+    using propagate_on_container_copy_assignment = std::true_type;
+    using propagate_on_container_move_assignment = std::true_type;
+    using propagate_on_container_swap = std::true_type;
+
+    explicit ArenaAllocator(Arena * a) : arena(a) {}
+
+    template &lt;typename U&gt;
+    ArenaAllocator(ArenaAllocator&lt;U&gt; const & rhs) : arena(rhs.arena) {}
+
+    pointer allocate(std::size_t n)
+    {
+        return static_cast&lt;pointer&gt;(arena-&gt;allocate(n * sizeof(T), alignof(T)));
+    }
+
+    void deallocate(pointer p, std::size_t n)
+    {
+        arena-&gt;deallocate(p, n * sizeof(T));
+    }
+
+    template &lt;typename U, typename V&gt;
+    friend bool operator==(ArenaAllocator&lt;U&gt; const & lhs, ArenaAllocator&lt;V&gt; const & rhs)
+    {
+        return lhs.arena == rhs.arena;
+    }
+
+    template &lt;typename U, typename V&gt;
+    friend bool operator!=(ArenaAllocator&lt;U&gt; const & lhs, ArenaAllocator&lt;V&gt; const & rhs)
+    {
+        return lhs.arena != rhs.arena;
+    }
+
+private:
+    Arena * arena;
+};</div>
+
+    <p>The allocator&rsquo;s identity is the value of its <code>arena</code> member. The identity
+      is preserved by rebound-copies and verified with the equality and inequality operators.
+      The only non-trivial operation of this allocator is to forward allocation calls to the
+      arena (computing the desired type&rsquo;s alignment in the process).</p>
+
+    <h2>Using the allocator</h2>
+
+    <p>First, let us make a few arenas and some prototype allocators.</p>
+
+    <div class="code">Arena arena1(1024);
+      Arena arena2(400);
+      ArenaAllocator&lt;void&gt; a1(&amp;arena1);
+      ArenaAllocator&lt;void&gt; a2(&amp;arena2);
+    </div>
+
+    <p>Now we will not actually be using the allocator directly, but always wrap it in a scoped adaptor.
+      A type alias is handy.</p>
+
+    <div class="code">#include &lt;scoped_allocator&gt;
+
+      template &lt;typename T&gt;
+      using SA = std::scoped_allocator_adaptor&lt;ArenaAllocator&lt;T&gt;&gt;;</div>
+
+    <p>Now we are ready to allocate an actual data structure from our arena. As an example
+      (which is fairly plausible in real applications), we consider a map with string keys.
+      Both the map itself and the keys should be allocated from the same arena.</p>
+
+    <p>This example will make use of library features introduced in C++14, for subtle
+      reasons which we will point out below. This does not constrain the general validity
+      of the example, though, which is otherwise compliant with C++11.</p>
+
+    <p>The first step when making containers of elements which themselves use allocators is
+      to give each nested type the same scoped allocator type. We define several type aliases
+      for this purpose.</p>
+
+    <div class="code">#include &lt;map&gt;
+      #include &lt;string&gt;
+      #include &lt;utility&gt;
+
+      using astring = std::basic_string&lt;char, std::char_traits&lt;char&gt;, SA&lt;char&gt;&gt;;
+      using amap = std::map&lt;astring, int, std::less&lt;&gt;, SA&lt;std::pair&lt;astring const, int&gt;&gt;&gt;;</div>
+
+    <p>Both the map type itself and the contained string type are using the scoped allocator
+      <code>SA</code> that we defined above. Spelling out the map&rsquo;s value type is tedious,
+      but it draws attention to an interesting point we will making shortly.</p>
+
+    <p>Note the comparator type <code>std::less&lt;&gt;</code>. This is a feature from C++14, called
+      a <em>transparent</em> comparator. The call operator of the default <code>std::less&lt;astring&gt;</code>
+      expects two actual <code>astring</code> arguments, so we could only ever search for keys that
+      are arena-allocated strings. (Every map search would deplete our arena!) By contrast, the call
+      operator of a transparent comparator is a <em>template</em> which accepts any type and forwards
+      it to the comparison operator. To take advantage of this mechanism, the map&rsquo;s <code>find</code>
+      and <code>erase</code> members must themselves be templates, which was added in C++14. We will
+      see shortly how to take advantage of the transparent comparator.</p>
+
+    <p>Finally we can create, populate and explore our strings and maps.</p>
+
+    <div class="code strictpre">int main()
+{
+    astring s1("Short string", a);
+    astring s2("Very looooooooooooooong string", a);
+
+    amap m(a);
+
+    m[{"foo", a}] = 10;
+    m[{"fooooooooooooooooooooooooooooo", a}] = 20;
+    m[s1] = 30;
+    m[astring(std::move(s2), b)] = 40;
+    m[{"baaaaaaaaaaaaaaaaaaaaaaaaaaaaar", b}] = 50;
+
+    auto it = m.find("foo");
+    if (it != m.end()) { it->second *= 10; }
+
+    for (auto const & p : m)
+        std::cout &lt;&lt; p.first &lt;&lt; " => " &lt;&lt; p.second &lt;&lt; "\n";
+}</div>
+
+    <p>This code highlights several interesting aspects of allocator-aware code.</p>
+    <ul>
+      <li>Short and long strings may have different allocation behaviour when libraries implement
+        short-string optimisations, which store the entire string in the class header (which is
+        typically three words long). We are using long strings to ensure that our allocator is
+        actually being used.</li>
+      <li>Every object construction requires mention of the allocator object. The allocator
+        type is not default-constructible, and a prototype of the actual allocator must be
+        passed around (and rebound-copied) everywhere.</li>
+      <li>When the map is given a string, even by rvalue, that is allocated by a different allocator,
+        it will construct a new string with its own allocator. This point is worth spelling out.
+        Consider the statement that inserts the value 50. The key argument is a string rvalue that
+        uses allocator <code>b</code>. The map&rsquo;s internal allocator will use the
+        <code>construct()</code> function of the allocator traits, forwarding the string rvalue.
+        But the scoped allocator will mangle this construction call and insert its held allocator
+        argument, because the string satisfies the <code>uses_allocator</code> trait, so that the
+        actual string constructor that is being called is <code>basic_string(basic_string &amp;&amp; rhs,
+        Alloc const &amp; a)</code>. That constructor must check whether the allocator of <code>rhs</code>
+        and <code>a</code> are equal. If not, then the two allocators cannot free each other&rsquo's memory,
+        and the constructor has to actually copy the string data rather than only copying the pointers.</li>
+      <li>In the previous point we glossed over a final subtlety: The map&rsquo;s allocator constructs
+        elements of the map&rsquo;s <code>value_type</code>, which is a pair, and pairs do not take allocators.
+        However, <code>scoped_allocator_adaptor::construct</code>
+        actually contains a special provision for pair arguments which will apply the uses-allocator
+        construction to each pair element individually. By contrast, there is no such special provision
+        for <code>std::tuple</code>, but instead, <code>uses_allocator</code> is specialised for tuples
+        to be <code>true</code>, and <code>std::tuple</code> contains a set of allocator-extended
+        constructors, so that the same design can be applied to containers of tuples.</li>
+      <li>The <code>find</code> call uses the transparent comparator. Rather than searching for an allocated
+        <code>astring</code>, the <code>char const *</code> argument is forwarded directly to the comparison
+        expression, which in turn allows overload resolution to find the <code>operator&lt</code> for
+        <code>basic_string</code> that compares a string instance with a null-terminated character array. No
+        second string is ever constructed. This design works well enough for our example, but note that we cannot
+        compare <code>std::basic_string</code>s with different allocator types, since <code>basic_string</code> does
+        not contain overloaded comparison operator templates parametrised on the allocator. However, it is perfectly
+        feasible to write a custom, transparent comparator (parametrised only on the character traits) that compares
+        a larger set of string-like objects (<code>basic_string</code>s, string views, character arrays).</li>
+    </ul>
+
+    <p>Finally, here is the annotated and slightly edited output of a typical run (on a 64-bit system with short-string optimisation).</p>
+
+    <div class="code strictpre">arena[0x11111111] of size 1024 created.                  // arena1 constructed
+arena[0x22222222] of size 400 created.                   // arena2 constructed
+
+arena[0x11111111] allocating 32 bytes.                   // allocation for s2
+
+arena[0x11111111] allocating 72 bytes.                   // value_type for 10 (key is short)
+arena[0x11111111] allocating 32 bytes.                   // key_type temporary for 20 (moved into map)
+arena[0x11111111] allocating 72 bytes.                   // value_type for 20
+arena[0x11111111] allocating 72 bytes.                   // value_type for 30 (key is short)
+arena[0x22222222] allocating 32 bytes.                   // temporary for 40 (copied into map)
+arena[0x11111111] allocating 72 bytes.                   // value_type for 40
+arena[0x11111111] allocating 32 bytes.                   // key_type for 40
+arena[0x22222222] may deallocate 32 bytes.               // destroy temporary
+arena[0x22222222] allocating 32 bytes.                   // temporary for 50 (copied into map)
+arena[0x11111111] allocating 72 bytes.                   // value_type for 50
+arena[0x11111111] allocating 32 bytes.                   // key_type for 50
+arena[0x22222222] may deallocate 32 bytes.               // destroy temporary
+
+Short string                    =>  30
+Very looooooooooooooong string  =>  40
+baaaaaaaaaaaaaaaaaaaaaaaaaaaaar =>  50
+foo                             => 100
+fooooooooooooooooooooooooooooo  =>  20
+
+arena[0x11111111] may deallocate 72 bytes.               // map destruction:
+arena[0x11111111] may deallocate 32 bytes.               // 5 value_types (72 bytes each)
+arena[0x11111111] may deallocate 72 bytes.               // 3 long string keys
+arena[0x11111111] may deallocate 32 bytes.
+arena[0x11111111] may deallocate 72 bytes.
+arena[0x11111111] may deallocate 32 bytes.
+arena[0x11111111] may deallocate 72 bytes.
+arena[0x11111111] may deallocate 72 bytes.
+
+arena[0x11111111] may deallocate 32 bytes.               // destroy s2 (was never moved from)
+
+arena[0x22222222] destroyed; final fill level was: 64    // arena2 destroyed
+arena[0x11111111] destroyed; final fill level was: 488   // arena1 destroyed
+</div>
+
+  </body>
+</html>

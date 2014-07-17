@@ -1,34 +1,9 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN">
-<!-- saved from url=(0065)https://x20web.corp.google.com/~tkoeppe/allocator_user_guide.html -->
-<html><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-    
-    <title>A visitor’s guide to allocators</title>
-    <style type="text/css">
-      html { margin: 0; padding: 0; color: black; background-color: white; }
-      body { padding: 2em; font-size: medium; font-family: "DejaVu Serif", serif; line-height: 150%; }
-      code { font-family: "DejaVu Sans Mono", monospace; color: #006; }
-
-      h1, h2, h3 { margin: 1.5em 0 .75em 0; line-height: 150%; font-weight: normal; font-family: "DejaVu Sans", sans-serif; }
-
-      div.code { white-space: pre-line; font-family: "DejaVu Sans Mono", monospace;
-                 border: thin solid #E0E0E0; background-color: #F8F8F8; padding: 1em;
-                 border-radius: 4px; }
-
-      div.strictpre { white-space: pre; overflow: auto; }
-
-      li { margin: 1ex 0; }
-      .tight li { margin: 0; }
-
-      .docinfo { float: right }
-      .docinfo p { margin: 0; text-align:right; }
-      .docinfo address { font-style: normal; }
-
-      .quote { display: inline-block; clear: both; margin-left: 1ex;
-                 border: thin solid #E0E0E0; background-color: #F8F8F8; padding: 1ex; }
-
-      .insert { border-left: thick solid #0A0; border-right: thick solid #0A0; padding: 0 1em; }
-      .comment { color: #456; }
-    </style>
+<html>
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <title>A visitor&rsquo;s guide to allocators</title>
+    <link type="text/css" rel="stylesheet" href="allocator_guide.css">
   </head>
 
   <!--
@@ -45,34 +20,36 @@
 
         2014-06-22: First draft [tkoeppe]
         2014-06-23: Revisions, incorporating feedback from JW [tkoeppe]
+        2014-07-16: Add links to examples, and examples.
 
   -->
 
   <body>
     <div class="docinfo">
       <!-- p>ISO/IEC JTC1 SC22 WG21 N????</p -->
-      <p>Date: 2014-06-23</p>
-      <address>Thomas Köppe &lt;<a href="mailto:tkoeppe@google.com">tkoeppe@google.com</a>&gt;</address>
+      <p>Date: 2014-07-16</p>
+      <address>Thomas K&ouml;ppe &lt;<a href="mailto:tkoeppe@google.com">tkoeppe@google.com</a>&gt;</address>
     </div>
 
-    <h1><span style="font-style: italic;">“Under Construction”</span><br>
-    A visitor’s guide to C++ allocators</h1>
+    <h1><span style="font-style: italic;">&ldquo;Under Construction&rdquo;</span><br>
+    A visitor&rsquo;s guide to C++ allocators</h1>
 
     <p style="text-align: center; margin-top: 4em; font-style: italic;">Contributors and collaborators welcome!</p>
 
     <!-- fgrep -e "<h2 id=" allocator_user_guide.html | sed -e 's/.*id="\(.*\)">\(.*\)<\/h2>/<li><a href="#\1">\2<\/a><\/li>/g' -->
     <h2>Contents</h2>
     <ol class="tight">
-      <li><a href="https://x20web.corp.google.com/~tkoeppe/allocator_user_guide.html#introduction">Introduction</a></li>
-      <li><a href="https://x20web.corp.google.com/~tkoeppe/allocator_user_guide.html#background">Background</a></li>
-      <li><a href="https://x20web.corp.google.com/~tkoeppe/allocator_user_guide.html#alloc">Allocators</a></li>
-      <li><a href="https://x20web.corp.google.com/~tkoeppe/allocator_user_guide.html#pointers">Pointers</a></li>
-      <li><a href="https://x20web.corp.google.com/~tkoeppe/allocator_user_guide.html#alloconst">From allocation to construction</a></li>
-      <li><a href="https://x20web.corp.google.com/~tkoeppe/allocator_user_guide.html#reqs">Requirements for allocators and pointers</a></li>
-      <li><a href="https://x20web.corp.google.com/~tkoeppe/allocator_user_guide.html#mut">Allocator identity</a></li>
-      <li><a href="https://x20web.corp.google.com/~tkoeppe/allocator_user_guide.html#contreqs">Standard library container requirements</a></li>
-      <li><a href="https://x20web.corp.google.com/~tkoeppe/allocator_user_guide.html#propagation">Propagating allocators</a></li>
-      <li><a href="https://x20web.corp.google.com/~tkoeppe/allocator_user_guide.html#conclusion">Conclusion</a></li>
+      <li><a href="#introduction">Introduction</a></li>
+      <li><a href="#background">Background</a></li>
+      <li><a href="#alloc">Allocators</a></li>
+      <li><a href="#pointers">Pointers</a></li>
+      <li><a href="#alloconst">From allocation to construction</a></li>
+      <li><a href="#reqs">Requirements for allocators and pointers</a></li>
+      <li><a href="#mut">Allocator identity</a></li>
+      <li><a href="#contreqs">Standard library container requirements</a></li>
+      <li><a href="#propagation">Propagating allocators</a></li>
+      <li><a href="#examples">Examples</a></li>
+      <li><a href="#conclusion">Conclusion</a></li>
     </ol>
 
     <h2 id="introduction">Introduction</h2>
@@ -151,7 +128,7 @@ p-&gt;~T();                                   // destruction
       provide a minimal set of information that differs from the defaults. (The traits template may be specialized for user-defined
       types, and different defaults may be provided in a specialization.)</p>
     <p>Suppose <code>a</code> is an allocator of type <code>Alloc</code>. Let us write <code>AllocTraits = std::allocator_traits&lt;Alloc&gt;</code>.
-      We say that “<code>a</code> is an allocator for <code>T</code>”, where <code>T = AllocTraits::value_type</code>. This
+      We say that &ldquo;<code>a</code> is an allocator for <code>T</code>&rdquo;, where <code>T = AllocTraits::value_type</code>. This
       means that <code>a</code> knows how to obtain and release memory to store objects of type <code>T</code>. To do so, we call
       <code>AllocTraits::allocate(a, n)</code>, and we obtain storage for <code>n</code> objects of type <code>T</code>.
     </p><p>So far so good. However, we can also use <code>a</code> to construct objects, either explicitly or via a default mechanism.
@@ -176,20 +153,20 @@ p-&gt;~T();                                   // destruction
     <p>The allocator communicates memory in terms of customizable type <code>AllocTraits::pointer</code>. This defaults to the
       unsurprising <code>T *</code>, but it <em>may be any user-defined type</em>. When <code>AllocTraits::pointer</code> is not
       the same as <code>T *</code>, we say that the allocator uses a <em>fancy pointer</em>. The allocator also defines a corresponding
-      “void pointer” via <code>AllocTraits::void_pointer</code>. Pointers and void pointers are convertible to one another.</p>
-    <p>(The typical example of a fancy pointer is an “offset pointer” into shared memory that allows separate processes
-      to access the same object in shared memory; the offset pointer stores only an offset, relative to the pointer object’s own
+      &ldquo;void pointer&rdquo; via <code>AllocTraits::void_pointer</code>. Pointers and void pointers are convertible to one another.</p>
+    <p>(The typical example of a fancy pointer is an &ldquo;offset pointer&rdquo; into shared memory that allows separate processes
+      to access the same object in shared memory; the offset pointer stores only an offset, relative to the pointer object&rsquo;s own
       address. This example demonstrates
-      the complexity of the problem: The vector’s own memory must be in shared memory; each member list
+      the complexity of the problem: The vector&rsquo;s own memory must be in shared memory; each member list
       must allocate from the same shared memory; each string in the list must allocate from the shared memory, and all references are
-      expressed in terms of relative offsets. However, each process must be able to obtain a proper, “normal” address for
+      expressed in terms of relative offsets. However, each process must be able to obtain a proper, &ldquo;normal&rdquo; address for
       each object, even if the object is stored in shared memory, by virtue of the dereference operation.)
 
     </p><p>Now that we have convinced ourselves that pointers are not an altogether trivial matter, it is time to introduce the final
       level of abstraction that the standard library has to offer: pointer traits. This is a class template, called <code>std::pointer_traits</code>,
       also defined in <code>&lt;memory&gt;</code>, and among other things it allows us to obtain pointers to objects (including fancy pointers).
       Let us write <code>AllocPtrTraits = std::pointer_traits&lt;AllocTraits::pointer&gt;</code>. The pointer traits define an <em>element
-      type</em> via <code>AllocPtrTraits::element_type</code>, which is either just the allocator’s value type <code>T</code> if
+      type</em> via <code>AllocPtrTraits::element_type</code>, which is either just the allocator&rsquo;s value type <code>T</code> if
       <code>AllocTraits::pointer == T *</code>, or otherwise it is reflected out of the fancy pointer type.
       The important operation provided by pointer traits is obtaining a pointer to an element: <code>AllocPtrTraits::pointer_to(r)</code>
       produces a pointer, either by computing <code>std::addressof(r)</code> if <code>AllocTraits::pointer == T *</code>, or otherwise
@@ -202,10 +179,10 @@ p-&gt;~T();                                   // destruction
     <ul>
       <li>If <code>AllocTraits::pointer</code> is a user-defined class type (and not <code>T *</code>), we say that <code>Alloc</code>
         uses fancy pointers.</li>
-      <li>For a glvalue <code>r</code> of type <code>T</code>, we have a “fancy address-of operator”:
+      <li>For a glvalue <code>r</code> of type <code>T</code>, we have a &ldquo;fancy address-of operator&rdquo;:
         <code>AllocTraits::pointer ptr = AllocPtrTraits::pointer_to(r);</code></li>
-      <li>For a fancy pointer <code>AllocTraits::pointer ptr</code>, we have a “fancy dereference operator”: <code>T &amp; r = *ptr;</code></li>
-      <li>We can obtain the “true address”, i.e. the address of the object obtained by dereferencing a fancy pointer, by the following operation:<br><br>
+      <li>For a fancy pointer <code>AllocTraits::pointer ptr</code>, we have a &ldquo;fancy dereference operator&rdquo;: <code>T &amp; r = *ptr;</code></li>
+      <li>We can obtain the &ldquo;true address&rdquo;, i.e. the address of the object obtained by dereferencing a fancy pointer, by the following operation:<br><br>
         <div class="code">template &lt;typename FancyPtr&gt;
           auto trueaddress(FancyPtr ptr)
           {
@@ -239,7 +216,7 @@ AllocTraits::deallocate(a, ptr, 1);                         // deallocate elemen
       <code>AllocPtrTraits</code> for its related allocator traits and pointer traits type.</p>
     <ul>
       <li><code>Alloc</code> must define a member type <code>value_type</code>. <code>Alloc</code> is an allocator
-        type “for that value”.</li>
+        type &ldquo;for that value&rdquo;.</li>
       <li><code>Alloc</code> may define a member type <code>pointer</code>, in which case <code>AllocTraits::pointer</code>
         and <code>AllocPtrTraits::pointer</code> are that same type; otherwise they are <code>Alloc::value_type *</code>.</li>
       <li><code>Alloc</code> may define a member template <code>rebind</code> for rebinding. This may be omitted if <code>Alloc</code>
@@ -358,7 +335,7 @@ NodeTraits::deallocate(n_a, ptr, 1);                                      // dea
       <li>What happens when you copy the container? What kind of allocator does the copy get? What happens when you
         assign to a container or swap to containers? Are the allocators swapped, too, or is only the data swapped?</li>
       <li>If the container contains types which themselves require an allocator, how can the contained elements
-        be made aware of the container’s allocator so that they may use compatible allocators?</li>
+        be made aware of the container&rsquo;s allocator so that they may use compatible allocators?</li>
     </ol>
 
     <p>The two problems are orthogonal to one another. Both require a fair amount of machinery.</p>
@@ -367,7 +344,7 @@ NodeTraits::deallocate(n_a, ptr, 1);                                      // dea
 
     <p>If an allocator is stateless, then all container objects that use the same allocator type have compatible
       allocators, and there is no problem. For example, swapping two containers can be achieved by simply exchanging
-      internal memory handles; either container’s allocator knows how to deallocate the memory.</p>
+      internal memory handles; either container&rsquo;s allocator knows how to deallocate the memory.</p>
 
     <p>However, when allocators are stateful, the situation is more complicated. We distinguish three situations which
       require a policy decision:</p>
@@ -381,17 +358,17 @@ NodeTraits::deallocate(n_a, ptr, 1);                                      // dea
       <li>Assignment (copy and move assignment). When you say <code>x1 = x2</code>, or more interestingly yet, <code>x1
         = std::move(x2)</code>, you have to decide whether <code>x1</code> is supposed to take the allocator from <code>x2</code>
         or to keep its own allocator. Either choice has advantages and disadvantages in the case where the two allocators
-        are not equal, and so neither one can deallocate the other one’s memory. If the allocator is reassigned, then
+        are not equal, and so neither one can deallocate the other one&rsquo;s memory. If the allocator is reassigned, then
         it may be necessary to deallocate the currently held data with the old allocator first, and allocate new memory
         with the newly assigned allocator, rather than keeping the exisitng memory and just reassigning the element values.
         On the other hand, if the allocator is reassigned, move-assignment is efficient, since the entire internal allocation
         can just be moved over to <code>x1</code>. If the allocator is not reassigned, move-assignment would require an actual
         element-by-element copy. The desired policy is chosen by means of the types <code>AllocTraits::propagate_on_container_copy_assignment</code>
-        (“POCCA”) and <code>AllocTraits::propagate_on_container_move_assignment</code> (“POCMA”), which
+        (&ldquo;POCCA&rdquo;) and <code>AllocTraits::propagate_on_container_move_assignment</code> (&ldquo;POCMA&rdquo;), which
         are either <code>std::true_type</code> or <code>std::false_type</code>. Note that this choice is made per allocator
         <em>type</em>, not per object.</li>
       <li>Swap. The same considerations apply in principle as for assignment, and the controlling trait is
-        <code>AllocTraits::propagate_on_container_swap</code> (“POCS”). However, the standard library container
+        <code>AllocTraits::propagate_on_container_swap</code> (&ldquo;POCS&rdquo;). However, the standard library container
         requirements mandate that POCS is either true, or that otherwise the allocators of the containers that are to
         be swapped compare equal. If this were not required, then swapping with unequal, unswapped allocators could not
         preserve iterators.</li>
@@ -400,7 +377,7 @@ NodeTraits::deallocate(n_a, ptr, 1);                                      // dea
     <h3>Deep allocator propagation: the <code>uses_allocator</code> construction</h3>
 
     <p>Suppose we have a vector of linked lists, and the vector uses some allocator of our choice. Even if we
-      used a list type that would also be configured to use an allocator of the same type as our vector’s
+      used a list type that would also be configured to use an allocator of the same type as our vector&rsquo;s
       allocator, we still need a mechanism for ensuring that the vector elements (which themselves are lists)
       are constructed with the correct allocator (namely with a suitably rebound copy of the vector allocator).</p>
 
@@ -421,9 +398,9 @@ NodeTraits::deallocate(n_a, ptr, 1);                                      // dea
           <li><code>X</code> has a constructor <code>X::X(Args..., Alloc const &amp;)</code>,
             where the final parameter is the desired allocator.</li>
         </ul>
-        The second form is the “legacy form” employed by the traditional standard library containers;
+        The second form is the &ldquo;legacy form&rdquo; employed by the traditional standard library containers;
         the first form is the recommended, new style, which is unambiguous. Classes whose constructors accept allocators
-        in this fashion are sometimes called “allocator-extended”. (Not every class that has allocator-extended
+        in this fashion are sometimes called &ldquo;allocator-extended&rdquo;. (Not every class that has allocator-extended
         constructors actually consumes an allocator. An example is <code>std::tuple</code>, for which the
         <code>uses_allocator</code> trait is specialized to <code>true</code>, so that allocators may be propagated
         through tuples of types which themselves require an allocator.)</li>
@@ -445,12 +422,24 @@ NodeTraits::deallocate(n_a, ptr, 1);                                      // dea
         call to <code>std::allocator_traits&lt;AllocTraits::rebind_alloc&lt;ListType&gt;&gt;::construct(outer_allocator(),
         std::allocator_arg, *this, arg1, arg2, arg3)</code>. In this fashion, the allocator is always rebound-copied into
         the constructors of the element values, as long as those have the <code>uses_allocator</code> trait set.
-    </li></ol>
+      </li>
+    </ol>
+
+    <h2 id="examples">Examples</h2>
+
+    <p>A few complete end-to-end examples are available on separate pages:</p>
+
+    <ul>
+      <li>Using allocators: <a href="allocator_example_usage.html">A simple arena allocator</a></li>
+      <li>Writing allocators: A thread-local pool allocator [to be written]</li>
+      <li>Writing containers: [to be written]</li>
+    </ul>
+
 
     <h2 id="conclusion">Conclusion</h2>
-    <p>[<em>Note. I'm not sure if this belongs here or will stay, but I didn't want to lose it.</em>]
+    <p>[<em>Note. I'm not sure if this belongs here or will stay, but I didn't want to lose it.</em>]</p>
 
-    </p><p>The mechanism to obtain dynamic memory is platform-dependent and opaque. We can make the argument that
+    <p>The mechanism to obtain dynamic memory is platform-dependent and opaque. We can make the argument that
       <em>any</em> direct uses of <code>new</code> and <code>delete</code> expressions should be avoided, as
       should any invocations of the (de)allocation functions <code>::operator new</code> and <code>::operator
       delete</code>. Moreover, neither global nor per-class overloads for those functions should be defined.
@@ -466,7 +455,9 @@ NodeTraits::deallocate(n_a, ptr, 1);                                      // dea
 
      * "value of type X&" doesn't make sense; values are never references
      * (void*) should be static_cast<void*>
-     * Does "constructs and object of type C at c" not require use of "args"?
-
+     * Does "constructs an object of type C at c" not require use of "args"?
+     * Allocator-agnostic free relational operators? Requires SCARY iterators for containers, and a change of compare() for basic_string.
 -->
-</body></html>
+
+  </body>
+</html>

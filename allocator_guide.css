@@ -1,0 +1,24 @@
+html { margin: 0; padding: 0; color: black; background-color: white; }
+body { padding: 2em; font-size: medium; font-family: "DejaVu Serif", serif; line-height: 150%; }
+code { font-family: "DejaVu Sans Mono", monospace; color: #006; }
+
+h1, h2, h3 { margin: 1.5em 0 .75em 0; line-height: 150%; font-weight: normal; font-family: "DejaVu Sans", sans-serif; }
+
+div.code { white-space: pre-line; font-family: "DejaVu Sans Mono", monospace;
+           border: thin solid #E0E0E0; background-color: #F8F8F8; padding: 1em;
+           border-radius: 4px; }
+
+div.strictpre { white-space: pre; overflow: auto; }
+
+li { margin: 1ex 0; }
+.tight li { margin: 0; }
+
+.docinfo { float: right }
+.docinfo p { margin: 0; text-align:right; }
+.docinfo address { font-style: normal; }
+
+.quote { display: inline-block; clear: both; margin-left: 1ex;
+         border: thin solid #E0E0E0; background-color: #F8F8F8; padding: 1ex; }
+
+.insert { border-left: thick solid #0A0; border-right: thick solid #0A0; padding: 0 1em; }
+.comment { color: #456; }
