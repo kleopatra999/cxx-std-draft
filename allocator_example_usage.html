@@ -6,24 +6,6 @@
     <link type="text/css" rel="stylesheet" href="allocator_guide.css">
   </head>
 
-  <!--
-        TODO
-        ====
-
-        * Explain offset pointers better and whether/how they need (stateful?) allocators.
-
-        * Make the demonstration of scoped_allocator_adaptor clearer and more general.
-
-
-        Revision history
-        ================
-
-        2014-06-22: First draft [tkoeppe]
-        2014-06-23: Revisions, incorporating feedback from JW [tkoeppe]
-        2014-07-16: Add links to examples, and examples.
-
-  -->
-
   <body>
     <div class="docinfo">
       <!-- p>ISO/IEC JTC1 SC22 WG21 N????</p -->
@@ -237,8 +219,8 @@ private:
     <ul>
       <li>Short and long strings may have different allocation behaviour when libraries implement
         short-string optimisations, which store the entire string in the class header (which is
-        typically three words long). We are using long strings to ensure that our allocator is
-        actually being used.</li>
+        typically three <code>pointer</code>s or one <code>pointer</code> and two <code>size_type</code>s
+        long). We are using long strings to ensure that our allocator is actually being used.</li>
       <li>Every object construction requires mention of the allocator object. The allocator
         type is not default-constructible, and a prototype of the actual allocator must be
         passed around (and rebound-copied) everywhere.</li>
