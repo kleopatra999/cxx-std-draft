@@ -61,6 +61,7 @@
 
     <div class="code strictpre">#include &lt;memory&gt;
 #include &lt;type_traits&gt;
+#include &lt;utility&gt;
 
 template &lt;typename T, typename Alloc = std::allocator&lt;T&gt;&gt;
 class vlarray
@@ -102,7 +103,7 @@ private:
 
     bool empty() const noexcept { return r.size == 0; }
 
-    allocator_type get_allocator() noexcept { return r; }</div>
+    allocator_type get_allocator() const noexcept { return r; }</div>
 
     <p>We could also offer an interface to obtain an element&rsquo;s fancy address, which can
       be computed as <code>std::pointer_traits&lt;pointer&gt;::pointer_to(operator[](i))</code>.
@@ -181,7 +182,7 @@ public:
     void clear() noexcept
     {
         internal_clear();
-        r.data = nullptr;
+        r.data = pointer();
         r.size = 0;
     }
 
@@ -195,7 +196,7 @@ private:
         size_type current = 0;
         try
         {
-            for (size_type i = 0; i != size(); ++i, ++current)
+            for (size_type i = 0; i != n; ++i, ++current)
             {
                 traits::construct(a, std::addressof(*p) + i, src[i]);
             }
@@ -212,7 +213,7 @@ private:
 
 public:
     vlarray(vlarray const &amp; rhs)
-    : vlarray(std::allocator_arg, traits::select_on_container_copy(rhs.r), rhs) {}
+    : vlarray(std::allocator_arg, traits::select_on_container_copy_construction(rhs.r), rhs) {}
 
     vlarray(std::allocator_arg_t, allocator_type const &amp; alloc, vlarray const &amp; rhs)
     : r(alloc, rhs.r.size)
@@ -244,6 +245,10 @@ public:
         }
     }</div>
 
+    <p>We have introduced private helper functions <code>internal_clear()</code> and <code>internal_construct</code>,
+      which will be used repeatedly. The latter function in particular encapsulates the strong exception guarantee
+      nicely, since it will either return a pointer to a fully populated storage, or exit with an exception.</p>
+
     <p>Finally we get to the most involved parts of the container design: assignment and swap. The
       details of these operations depend on the allocator POCCA, POCMA and POCS properties (&ldquo;propagate
       on container {copy assignment, move assignment, swap}&rdquo;).</p>
@@ -265,26 +270,38 @@ public:
     {
         if (this == &amp;rhs) { return *this; }
 
-        allocator_type & ra = traits::propagate_on_container_copy_assigment ? rhs.r : r;
-        pointer p = internal_construct(ra, rhs.data(), rhs.size());
+        pointer p;
+        if (traits::propagate_on_container_copy_assignment::value)
+        {
+            allocator_type ra = rhs.r;
+            p = internal_construct(ra, rhs.data(), rhs.size());
+            static_cast&lt;allocator_type &amp;&gt;(r) = static_cast&lt;allocator_type &amp;&gt;(rhs.r);
+        }
+        else
+        {
+            p = internal_construct(r, rhs.data(), rhs.size());
+        }
 
         internal_clear();
-        if (traits::propagate_on_container_copy_assignment)
-            static_cast&lt;allocator_type &amp;&gt;(r) = rhs.r;
         r.data = p;
         r.size = rhs.size();
+
+        return *this;
     }</div>
 
     <p>The most subtle part is move-assignment. If the allocator has POCMA, then we move-assign the allocator
-      and take over the assigned resources. If the allocator does not have POCMA, we can check dynamically
-      whether the two allocators happen to be equal and then take over the assigned resources. Failing that,
-      we have to make a copy of the data.</p>
+      and take over the assigned resources, and no exceptions can arise in this case. If the allocator does not
+      have POCMA, we can check dynamically whether the two allocators happen to be equal and then take over the
+      assigned resources. Failing that, we have to make a copy of the data. Since this decision is a dynamic one,
+      we cannot give a nothrowing exception specification. (This is bad: other containers, such as <code>std::vector</code>,
+      can only move data efficiently if it can be moved without throwing. Otherwise, those containers have to fall
+      back on copying. The moral is that allocators without POCMA are to be considered with great care.)</p>
 
     <div class="code strictpre">private:
-    void internal_move_assign(vlarray &amp;&amp; rhs, std::true_type)
+    void internal_move_assign(vlarray &amp;&amp; rhs, std::true_type) noexcept
     {
         internal_clear();
-        static_cast&lt;allocator_type &amp;&gt;(r) = rhs.r;
+        static_cast&lt;allocator_type &amp;&gt;(r) = std::move(rhs.r);
         r.data = rhs.r.data;
         r.size = rhs.r.size;
         rhs.r.data = pointer();
@@ -311,11 +328,11 @@ public:
     }
 
 public:
-    vlarray &amp; operator=(vlarray &amp;&amp; rhs) noexcept
+    vlarray &amp; operator=(vlarray &amp;&amp; rhs) noexcept(traits::propagate_on_container_move_assignment::value)
     {
         if (this != &amp;rhs)
         {
-            internal_move_assign(std::move(rhs), traits::propagate_on_container_move_assignment());
+            internal_move_assign(std::move(rhs), typename traits::propagate_on_container_move_assignment());
         }
         return *this;
     }

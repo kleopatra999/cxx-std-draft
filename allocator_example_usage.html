@@ -56,9 +56,9 @@ public:
 
     void * allocate(std::size_t n, std::size_t a)
     {
-        std::cout &lt;&lt; "arena[" &lt;&lt; this &lt;&lt; "] allocating " &lt;&lt; n &lt;&lt; " bytes.\n";
-
         offset = (offset + a - 1) / a * a;
+
+        std::cout &lt;&lt; "arena[" &lt;&lt; this &lt;&lt; "] allocating " &lt;&lt; n &lt;&lt; " bytes at offset " &lt;&lt; offset &lt;&lt; ".\n";
 
         if (offset + n &gt; size)
         {

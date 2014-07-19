@@ -353,7 +353,7 @@ NodeTraits::deallocate(n_a, ptr, 1);                                      // dea
         which allocator does <code>X x2(x1)</code> use? It could either be a copy of <code>x.get_allocator()</code>, or it could
         be a default-constructed, new allocator, or it could be something else. The universal answer is provided by
         <code>AllocTraits::select_on_container_copy_construction(x1.get_allocator())</code>. This trait is configurable,
-        e.g. via the member function <code>Alloc::select_on_container_copy</code>, and the default is to return a copy
+        e.g. via the member function <code>Alloc::select_on_container_copy_construction</code>, and the default is to return a copy
         of the existing allocator.</li>
       <li>Assignment (copy and move assignment). When you say <code>x1 = x2</code>, or more interestingly yet, <code>x1
         = std::move(x2)</code>, you have to decide whether <code>x1</code> is supposed to take the allocator from <code>x2</code>
