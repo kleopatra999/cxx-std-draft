@@ -1,0 +1,324 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN">
+<html>
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <title>Allocator example: A simple dynamic container</title>
+    <link type="text/css" rel="stylesheet" href="allocator_guide.css">
+  </head>
+
+  <body>
+    <div class="docinfo">
+      <!-- p>ISO/IEC JTC1 SC22 WG21 N????</p -->
+      <p>Date: 2014-07-19</p>
+      <address>Thomas K&ouml;ppe &lt;<a href="mailto:tkoeppe@google.com">tkoeppe@google.com</a>&gt;</address>
+    </div>
+
+    <h1>Allocator example: A simple dynamic container</h1>
+
+    <p>Part of the <a href="allocator_user_guide.html">Visitor&rsquo;s Guide to C++ Allocators</a></p>
+
+    <h2>Overview</h2>
+
+    <p>We design a simple dynamic array that obtains storage from an allocator. We keep the container&rsquo;s
+      interface simple, and instead focus on the important allocator operations. The container is essentially
+      a dynamic array whose size is fixed at construction. We only allow either value-initialising each element,
+      or copy-initialising each element from a prototype. The interesting aspects for the purpose of this example
+      lie in copying, moving, assigning and swapping the container, as well as in choosing its internal
+      representation.</p>
+
+    <p>We summarise the design decisions so far.</p>
+
+    <ul>
+      <li>The container should be parametrised on a value type and an allocator.</li>
+      <li>We represent the managed data by a pointer to the allocated memory and the
+        number of elements.</li>
+      <li>Since we need to store the allocator object inside the container, we will
+        use nested auxiliary structures to take advantage of base layout optimisations,
+        particularly aimed at the case where the allocator is stateless (empty). (Our
+        solution is not the best possible, since a stateful allocator may mean that the
+        data pointer will not be stored at the beginning of the class and thus every
+        element access will require an offset computation. This can be avoided with more
+        elaborate class design.)</li>
+      <li>We need a name: <code>vlarray</code>, for "variable length array", seems apt.</li>
+    </ul>
+
+    <h2>Exceptions</h2>
+
+    <p>Allocator support adds another level of subtlety to exception correctness. We would like
+      to provide the strong exception guarantee everywhere (i.e. either an operation completes or
+      has no effect).</p>
+    <p>The naive assumption is that swaps and moves should be exception-free, and
+      that move-assignment and default construction should have the same exception specification.
+      However, stateful allocators complicate the picture: move operations may turn into copy operations
+      if the allocators are not equal.</p>
+    <p>In the sequel, we invite the reader to consider carefully for each function why and how the
+      exception specification was chosen.</p>
+
+    <h2>Implementation</h2>
+
+    <p>We start with a number of type aliases. Note in particular that the <code>allocator_type</code>
+      type member is used by the <em>uses-allocator</em> construction.</p>
+
+    <div class="code strictpre">#include &lt;memory&gt;
+#include &lt;type_traits&gt;
+
+template &lt;typename T, typename Alloc = std::allocator&lt;T&gt;&gt;
+class vlarray
+{
+public:
+    using value_type = T;
+    using allocator_type = Alloc;
+
+private:
+    using traits = std::allocator_traits&lt;allocator_type&gt;;
+    using pointer = typename traits::pointer;
+
+public:
+    using size_type = typename traits::size_type;
+
+private:
+    struct representation : allocator_type
+    {
+        pointer data;
+        size_type size;
+
+        explicit representation(allocator_type const &amp; a, size_type n)
+        : allocator_type(a), size(n) {}
+    };
+
+    representation r;</div>
+
+    <p>Next, we build the accessor interface. Note that we need to convert from the allocator&rsquo;s
+      <code>pointer</code> type to the native pointer type.</p>
+
+    <div class="code strictpre">public:
+    value_type       * data()       noexcept { return std::addressof(*r.data); }
+    value_type const * data() const noexcept { return std::addressof(*r.data); }
+
+    value_type       &amp; operator[](size_type i)       noexcept { return data()[i]; }
+    value_type const &amp; operator[](size_type i) const noexcept { return data()[i]; }
+
+    size_type size() const noexcept { return r.size; }
+
+    bool empty() const noexcept { return r.size == 0; }
+
+    allocator_type get_allocator() noexcept { return r; }</div>
+
+    <p>We could also offer an interface to obtain an element&rsquo;s fancy address, which can
+      be computed as <code>std::pointer_traits&lt;pointer&gt;::pointer_to(operator[](i))</code>.
+      We have omitted this somewhat obscure feature here for brevity, and in any case we have
+      not exposed the allocator&rsquo;s pointer type to the user directly.</p>
+
+    <p>Now we get to the constructors and the destructor. We will use the modern signature
+      for allocator-extended operations, which take two initial arguments, <code>std::allocator_arg,
+      alloc</code>. The older convention of adding a single allocator argument as the last argument
+      is arguably less readable and prone to ambiguities.</p>
+
+    <p>We have to allow our container to exist in an empty state, which is the state it should have
+      after it has been moved from. We will also allow the container to be default-constructed to be
+      in the empty state, and we provide a <code>clear()</code> function to put a container into the
+      empty state.</p>
+
+    <p>Note that the default constructor may not be available if the allocator does not have an
+      accessible default constructor. If it is available, its exception specification
+      depends on the exception specification of the allocator&rsquo;s default constructor.</p>
+
+    <div class="code strictpre">    // Construct new container from scratch
+
+    constexpr vlarray() noexcept(std::is_nothrow_default_constructible&lt;allocator_type&gt;::value)
+    : vlarray(std::allocator_arg, allocator_type()) {}
+
+    constexpr vlarray(std::allocator_arg_t, allocator_type const &amp; alloc) noexcept
+    : r(alloc, 0)
+    { r.data = pointer(); }
+
+    explicit vlarray(size_type n)
+     : vlarray(n, value_type()) {}
+
+    explicit vlarray(size_type n, value_type const &amp; x)
+    : vlarray(std::allocator_arg, allocator_type(), n, x) {}
+
+    vlarray(std::allocator_arg_t, allocator_type const &amp; alloc, size_type n)
+    : vlarray(std::allocator_arg, alloc, n, value_type()) {}
+
+    vlarray(std::allocator_arg_t, allocator_type const &amp; alloc, size_type n, value_type const &amp; x)
+    : r(alloc, n)
+    {
+        allocator_type &amp; a = r;
+        pointer p = traits::allocate(a, size());
+        for (size_type i = 0; i != size(); ++i)
+        {
+            traits::construct(a, std::addressof(*p) + i, x);
+        }
+        r.data = p;
+    }
+
+
+    // Destructor
+
+private:
+    void internal_clear() noexcept
+    {
+        if (empty()) { return; }
+
+        allocator_type &amp; a = r;
+
+        for (size_type i = 0; i != size(); ++i)
+        {
+            size_type k = size() - i - 1;
+            traits::destroy(a, data() + k);
+        }
+
+        traits::deallocate(a, r.data, size());
+    }
+
+public:
+    ~vlarray()
+    {
+        internal_clear();
+    }
+
+    void clear() noexcept
+    {
+        internal_clear();
+        r.data = nullptr;
+        r.size = 0;
+    }
+
+
+    // Construct container from existing container
+
+private:
+    pointer internal_construct(allocator_type &amp; a, value_type const * src, size_type n)
+    {
+        pointer p = traits::allocate(a, n);
+        size_type current = 0;
+        try
+        {
+            for (size_type i = 0; i != size(); ++i, ++current)
+            {
+                traits::construct(a, std::addressof(*p) + i, src[i]);
+            }
+            return p;
+        }
+        catch (...)
+        {
+            do { traits::destroy(a, std::addressof(*p) + current); }
+            while (current --&gt; 0);
+            traits::deallocate(a, p, n);
+            throw;
+        }
+    }
+
+public:
+    vlarray(vlarray const &amp; rhs)
+    : vlarray(std::allocator_arg, traits::select_on_container_copy(rhs.r), rhs) {}
+
+    vlarray(std::allocator_arg_t, allocator_type const &amp; alloc, vlarray const &amp; rhs)
+    : r(alloc, rhs.r.size)
+    {
+        r.data = internal_construct(r, rhs.data(), size());
+    }
+
+    vlarray(vlarray &amp;&amp; rhs) noexcept
+    : r(rhs.r)
+    {
+        rhs.r.data = pointer();
+        rhs.r.size = 0;
+    }
+
+    vlarray(std::allocator_arg_t, allocator_type const &amp; alloc, vlarray &amp;&amp; rhs)
+    : r(alloc, rhs.r.size)
+    {
+        allocator_type &amp; a = r;
+      
+        if (a == static_cast&lt;allocator_type &amp;&gt;(rhs.r))
+        {
+            r.data = rhs.r.data;
+            rhs.r.data = pointer();
+            rhs.r.size = 0;
+        }
+        else
+        {
+            r.data = internal_construct(a, rhs.data(), size());
+        }
+    }</div>
+
+    <p>Finally we get to the most involved parts of the container design: assignment and swap. The
+      details of these operations depend on the allocator POCCA, POCMA and POCS properties (&ldquo;propagate
+      on container {copy assignment, move assignment, swap}&rdquo;).</p>
+
+    <p>Swapping is the easiest. Either the allocator has POCS, in which case it we swap the two allocator
+      objects, or otherwise we may simply demand that the allocators compare equal, or the behaviour is
+      undefined. With this precondition, we require no further branching.</p>
+
+    <div class="code strictpre">    void swap(vlarray &amp; rhs) noexcept
+    {
+        std::swap(r, rhs.r);
+    }</div>
+
+    <p>Assignment is trickier. We first need to deallocate the existing storage and then reallocate new
+      storage with the appropriate allocator. For copy-assignment, the POCCA condition is relatively
+      unobtrusive.</p>
+
+    <div class="code strictpre">    vlarray &amp; operator=(vlarray const &amp; rhs)
+    {
+        if (this == &amp;rhs) { return *this; }
+
+        allocator_type & ra = traits::propagate_on_container_copy_assigment ? rhs.r : r;
+        pointer p = internal_construct(ra, rhs.data(), rhs.size());
+
+        internal_clear();
+        if (traits::propagate_on_container_copy_assignment)
+            static_cast&lt;allocator_type &amp;&gt;(r) = rhs.r;
+        r.data = p;
+        r.size = rhs.size();
+    }</div>
+
+    <p>The most subtle part is move-assignment. If the allocator has POCMA, then we move-assign the allocator
+      and take over the assigned resources. If the allocator does not have POCMA, we can check dynamically
+      whether the two allocators happen to be equal and then take over the assigned resources. Failing that,
+      we have to make a copy of the data.</p>
+
+    <div class="code strictpre">private:
+    void internal_move_assign(vlarray &amp;&amp; rhs, std::true_type)
+    {
+        internal_clear();
+        static_cast&lt;allocator_type &amp;&gt;(r) = rhs.r;
+        r.data = rhs.r.data;
+        r.size = rhs.r.size;
+        rhs.r.data = pointer();
+        rhs.r.size = 0;
+    }
+
+    void internal_move_assign(vlarray &amp;&amp; rhs, std::false_type)
+    {
+        if (static_cast&lt;allocator_type &amp;&gt;(r) == static_cast&lt;allocator_type &amp;&gt;(rhs.r))
+        {
+            internal_clear();
+            r.data = rhs.r.data;
+            r.size = rhs.r.size;
+            rhs.r.data = pointer();
+            rhs.r.size = 0;
+        }
+        else
+        {
+            pointer p = internal_construct(r, rhs.data(), rhs.size());
+            internal_clear();
+            r.data = p;
+            r.size = rhs.size();
+        }
+    }
+
+public:
+    vlarray &amp; operator=(vlarray &amp;&amp; rhs) noexcept
+    {
+        if (this != &amp;rhs)
+        {
+            internal_move_assign(std::move(rhs), traits::propagate_on_container_move_assignment());
+        }
+        return *this;
+    }
+};</div>
+  </body>
+</html>

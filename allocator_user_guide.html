@@ -374,6 +374,9 @@ NodeTraits::deallocate(n_a, ptr, 1);                                      // dea
         preserve iterators.</li>
     </ul>
 
+    <p>The allocator propagation operations are generally not allowed to throw exceptions. Specifically,
+      if POC{CA, MA, S} is true, then {copy-assignment, move-assignment, swap} must not throw exceptions.</p>
+
     <h3>Deep allocator propagation: the <code>uses_allocator</code> construction</h3>
 
     <p>Suppose we have a vector of linked lists, and the vector uses some allocator of our choice. Even if we
@@ -432,7 +435,8 @@ NodeTraits::deallocate(n_a, ptr, 1);                                      // dea
     <ul>
       <li>Using allocators: <a href="allocator_example_usage.html">A simple arena allocator</a></li>
       <li>Writing allocators: A thread-local pool allocator [to be written]</li>
-      <li>Writing containers: [to be written]</li>
+      <li>Writing allocators: A shared-memory allocator [to be written]</li>
+      <li>Writing containers: <a href="allocator_example_container.html">A simple dynamic container</a></li>
     </ul>
 
 
