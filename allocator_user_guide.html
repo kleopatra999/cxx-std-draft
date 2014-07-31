@@ -21,13 +21,14 @@
         2014-06-22: First draft [tkoeppe]
         2014-06-23: Revisions, incorporating feedback from JW [tkoeppe]
         2014-07-16: Add links to examples, and examples.
+        2014-07-31: Add explanation of NullablePointer requirements
 
   -->
 
   <body>
     <div class="docinfo">
       <!-- p>ISO/IEC JTC1 SC22 WG21 N????</p -->
-      <p>Date: 2014-07-16</p>
+      <p>Date: 2014-07-31</p>
       <address>Thomas K&ouml;ppe &lt;<a href="mailto:tkoeppe@google.com">tkoeppe@google.com</a>&gt;</address>
     </div>
 
@@ -150,9 +151,10 @@ p-&gt;~T();                                   // destruction
       allocator <code>a</code> for <code>T</code> can only allocate memory for a contiguous sequence of objects of type <code>T</code>.
       To allocate memory for <code>n</code> such objects, we say:</p>
     <div class="code">AllocTraits::pointer p = AllocTraits::allocate(a, n);</div>
-    <p>The allocator communicates memory in terms of customizable type <code>AllocTraits::pointer</code>. This defaults to the
+    <p>The allocator communicates memory in terms of customisable type <code>AllocTraits::pointer</code>. This defaults to the
       unsurprising <code>T *</code>, but it <em>may be any user-defined type</em>. When <code>AllocTraits::pointer</code> is not
-      the same as <code>T *</code>, we say that the allocator uses a <em>fancy pointer</em>. The allocator also defines a corresponding
+      the same as <code>T *</code>, we say that the allocator uses a <em>fancy pointer</em>. Whatever the type is, it must satisfy
+      the concept of a <code>NullablePointer</code>, which we describe below. The allocator also defines a corresponding
       &ldquo;void pointer&rdquo; via <code>AllocTraits::void_pointer</code>. Pointers and void pointers are convertible to one another.</p>
     <p>(The typical example of a fancy pointer is an &ldquo;offset pointer&rdquo; into shared memory that allows separate processes
       to access the same object in shared memory; the offset pointer stores only an offset, relative to the pointer object&rsquo;s own
@@ -173,10 +175,40 @@ p-&gt;~T();                                   // destruction
       by a mechanism specified by the fancy pointer class. See below for details. Finally, it is a requirement that <code>AllocTraits::pointer</code>
       must be dereferencable (producing a value of type <code>AllocTraits::value_type</code>) by providing <code>operator*</code> and <code>operator-&gt;</code>.</p>
 
+    <h3>The <code>NullablePointer</code> requirements</h3>
+
+    <p>The type <code>AllocTraits::pointer</code> may not be arbitrary, but rather it must satisfy a set of
+      requirements called <code>NullablePointer</code> which capture the semi-regular features of the built-in
+      pointer types (default-constructible, copyable, copy-assignable, destructible, all without throwing exceptions;
+      and copying and assigning have
+      the usual semantics), as well as the existence of a special null value. Specifically, if a type <code>T</code>
+      satisfies the <code>NullablePointer</code> requirements, then it must have a distinguished null value, which
+      compares equal only to itself, and value-initialisation of <code>T</code> (i.e. <code>T()</code>) produces
+      the null value. Moreover, much like for the built-in types, it is permissible for default-initialisation of
+      <code>T</code> not to perform any initialisation.</p>
+
+    <p>The fact that <code>AllocTraits::pointer</code> can be any type that satisfies these requirements has
+      consequences for library authors: It is not generally permissible to attempt to produce a null pointer
+      from an initialiser such as <code>NULL</code>, a literal <code>0</code>, or <code>nullptr</code>. The
+      pointer type may not have appropriate constructors, or the constructor overload may be ambiguous, or it
+      may not have the desired effect. The only way to produce a null pointer is to value-initialise
+      <code>AllocTraits::pointer</code>.</p>
+
+    <p>Moreover, the pointer type may not be trivially constructible. In fact, if it is a class type,
+      it <em>cannot</em> be trivially constructible, since the default constructor must initialise its
+      state to the null value. Therefore, common &ldquo;small-container&rdquo; optimisations that
+      represent the container class members as a union of a set of pointers and raw storage need be
+      careful to provide the union with appropriate constructors.</p>
+
+    <p>In summary, it is tempting to write container code as though the pointer type were <code>T *</code>,
+      but in order to make a container work with arbitrary standard conforming allocators, care must be taken
+      to talk about pointers only in the language of the <code>NullablePointer</code> requirements.</p>
+
     <h3>Fancy pointer summary</h3>
 
     <p>We write <code>T = AllocTraits::value_type</code> for brevity.</p>
     <ul>
+      <li>The type <code>AllocTraits::pointer</code> meets the <code>NullablePointer</code> requirements (cf. [nullablepointer.requirements]).</li>
       <li>If <code>AllocTraits::pointer</code> is a user-defined class type (and not <code>T *</code>), we say that <code>Alloc</code>
         uses fancy pointers.</li>
       <li>For a glvalue <code>r</code> of type <code>T</code>, we have a &ldquo;fancy address-of operator&rdquo;:
@@ -225,6 +257,7 @@ AllocTraits::deallocate(a, ptr, 1);                         // deallocate elemen
       </li><li>If <code>Alloc::pointer</code> is defined and a user-defined class type (as opposed to <code>Alloc::value_type *</code>), then
         we say that <code>Alloc</code> has a fancy pointer. In that case:
         <ul>
+          <li><code>Alloc::pointer</code> satisfies the <code>NullablePointer</code> requirements.</li>
           <li><code>Alloc::pointer</code> should have a member type <code>element_type</code> (though it need
             not have such a member type if it is a template class <code>P&lt;V, Args...&gt;</code>, in which case
             <code>AllocPtrTraits::element_type</code> is <code>V</code>).</li>
@@ -233,6 +266,13 @@ AllocTraits::deallocate(a, ptr, 1);                         // deallocate elemen
         </ul>
       </li>
     </ul>
+    <p>In all of the above we ignored the alternative possibility of specialising <code>std::allocator_traits</code>
+      directly for the desired allocator type. So rather than defining <code>Alloc::pointer</code>, it is also
+      permissible to specialise <code>std::allocator_traits&lt;Alloc&gt;</code> and define <em>its</em> member
+      <code>pointer</code>. In that fashion, it is possible for an allocator to have fancy pointers even it if
+      does not define a <code>pointer</code> member. (Such a design would be obscure and cumbersome, though,
+      since the <code>Alloc::allocate</code> member function still needs to have a return type that matches
+      <code>AllocTraits::pointer</code>.) The above requirements are to be understood with this concession in mind.</p>
 
     <h2 id="mut">Allocator identity</h2>
 
@@ -434,8 +474,9 @@ NodeTraits::deallocate(n_a, ptr, 1);                                      // dea
 
     <ul>
       <li>Using allocators: <a href="allocator_example_usage.html">A simple arena allocator</a></li>
-      <li>Writing allocators: A thread-local pool allocator [to be written]</li>
+      <li>Writing pointers: A simple offset pointer [to be written]</li>
       <li>Writing allocators: A shared-memory allocator [to be written]</li>
+      <li>Writing allocators: A thread-local pool allocator [to be written]</li>
       <li>Writing containers: <a href="allocator_example_container.html">A simple dynamic container</a></li>
     </ul>
 
