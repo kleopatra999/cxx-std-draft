@@ -21,7 +21,7 @@
         2014-06-23: Revisions, incorporating feedback from JW [tkoeppe]
         2014-07-16: Add links to examples, and examples.
         2014-07-31: Add explanation of NullablePointer requirements
-        2014-08-02: Add details on void pointers and dereferenceable pointers
+        2014-08-02: Add details on void pointers and dereferenceable pointers and on random access iterators
 
   -->
 
@@ -270,6 +270,7 @@ AllocTraits::deallocate(a, ptr, 1);                         // deallocate elemen
         we say that <code>Alloc</code> has a fancy pointer. In that case:
         <ul>
           <li><code>Alloc::pointer</code> satisfies the <code>NullablePointer</code> requirements.</li>
+          <li><code>Alloc::pointer</code> satisfies the requirements for a random access iterator.</li>
           <li><code>Alloc::pointer</code> should have a member type <code>element_type</code> (though it need
             not have such a member type if it is a template class <code>P&lt;V, Args...&gt;</code>, in which case
             <code>AllocPtrTraits::element_type</code> is <code>V</code>).</li>
