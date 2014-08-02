@@ -10,9 +10,8 @@
         TODO
         ====
 
-        * Explain offset pointers better and whether/how they need (stateful?) allocators.
-
         * Make the demonstration of scoped_allocator_adaptor clearer and more general.
+        * Write example code for offset pointers
 
 
         Revision history
@@ -22,13 +21,14 @@
         2014-06-23: Revisions, incorporating feedback from JW [tkoeppe]
         2014-07-16: Add links to examples, and examples.
         2014-07-31: Add explanation of NullablePointer requirements
+        2014-08-02: Add details on void pointers and dereferenceable pointers
 
   -->
 
   <body>
     <div class="docinfo">
       <!-- p>ISO/IEC JTC1 SC22 WG21 N????</p -->
-      <p>Date: 2014-07-31</p>
+      <p>Date: 2014-08-02</p>
       <address>Thomas K&ouml;ppe &lt;<a href="mailto:tkoeppe@google.com">tkoeppe@google.com</a>&gt;</address>
     </div>
 
@@ -55,7 +55,7 @@
 
     <h2 id="introduction">Introduction</h2>
 
-    <p>Allocators are perphaps one of the most pervasive, yet least loved parts of the C++ standard library.
+    <p>Allocators are perhaps one of the most pervasive, yet least loved parts of the C++ standard library.
       This guide attempts to explain what allocators are and how library authors are supposed to use them.
       On this brief journey through one of the wilder realms of C++ we will meet allocator traits, pointer
       traits, fancy pointers and cast operations that will shake even the strongest minds.</p>
@@ -67,7 +67,7 @@
       resource which is needed to create new C++ objects: <em>memory</em>. Given appropriate memory (i.e. of the right size
       and alignment) at some address <code>p</code>, we can bring to life a new C++ object of type <code>T</code> by
       saying <code>::new (p) T</code>. This is the fundamental idea underpinning all dynamic containers.</p>
-    <p>However, the mechamism by which suitable memory is obtained is system-specific and essentially opaque to the user.
+    <p>However, the mechanism by which suitable memory is obtained is system-specific and essentially opaque to the user.
       C++ offers a default mechanism, <code>::operator new(sizeof(T))</code>, but there is little to no control over
       what this does. Since the logic of a dynamic container does not depend on the specifics of how memory is obtained,
       general wisdom dictates that the design of container classes should be decoupled from the memory allocation policy.
@@ -88,7 +88,7 @@
 
     <h2 id="alloc">Allocators</h2>
 
-    <p>The C++ standard library defines the notion of an <em>allocator</em>, which is an object used to parametrize
+    <p>The C++ standard library defines the notion of an <em>allocator</em>, which is an object used to parametrise
       memory allocation and object construction. The point that an allocator has <em>two separate responsibilities</em>
       is worth repeating: an allocator knows how to obtain memory, and it knows how to construct objects.</p>
     <p>To understand why allocators are useful, let us step back into a world without allocators. Creating a dynamic object
@@ -116,9 +116,9 @@ p-&gt;~T();                                   // destruction
 </div>
     </div>
 
-    <p>The broken-down operations show the mental model that allocators are intended to parametrize. To achieve this,
+    <p>The broken-down operations show the mental model that allocators are intended to parametrise. To achieve this,
       an allocator defines four fundamental operations: <code>allocate</code>, <code>deallocate</code>, <code>construct</code>,
-      and <code>destroy</code>, which generalize, respectively, to the allocation function (<code>::operator new</code>), the
+      and <code>destroy</code>, which generalise, respectively, to the allocation function (<code>::operator new</code>), the
       deallocation function (<code>::operator delete</code>), placement-<code>new</code>, and the explicit destructor call.</p>
 
     <p>To go into further detail, we need to establish some terminology. The standard reference is section [allocator.requirements].</p>
@@ -126,8 +126,8 @@ p-&gt;~T();                                   // destruction
     <p>The standard header <code>&lt;memory&gt;</code> defines
       a trait class template <code>allocator_traits</code>, which provides a uniform interface to allocators. The allocator traits
       reflect certain members of the actual allocator type, but they also provide defaults, so that a custom allocator only needs to
-      provide a minimal set of information that differs from the defaults. (The traits template may be specialized for user-defined
-      types, and different defaults may be provided in a specialization.)</p>
+      provide a minimal set of information that differs from the defaults. (The traits template may be specialised for user-defined
+      types, and different defaults may be provided in a specialisation.)</p>
     <p>Suppose <code>a</code> is an allocator of type <code>Alloc</code>. Let us write <code>AllocTraits = std::allocator_traits&lt;Alloc&gt;</code>.
       We say that &ldquo;<code>a</code> is an allocator for <code>T</code>&rdquo;, where <code>T = AllocTraits::value_type</code>. This
       means that <code>a</code> knows how to obtain and release memory to store objects of type <code>T</code>. To do so, we call
@@ -155,7 +155,10 @@ p-&gt;~T();                                   // destruction
       unsurprising <code>T *</code>, but it <em>may be any user-defined type</em>. When <code>AllocTraits::pointer</code> is not
       the same as <code>T *</code>, we say that the allocator uses a <em>fancy pointer</em>. Whatever the type is, it must satisfy
       the concept of a <code>NullablePointer</code>, which we describe below. The allocator also defines a corresponding
-      &ldquo;void pointer&rdquo; via <code>AllocTraits::void_pointer</code>. Pointers and void pointers are convertible to one another.</p>
+      &ldquo;const pointer&rdquo; via <code>AllocTraits::const_pointer</code> and &ldquo;void pointers&rdquo; via
+      <code>AllocTraits::void_pointer</code> and <code>AllocTraits::const_void_pointer</code>. Pointers are implicitly convertible to
+      const pointers. Pointers and void pointers are mutually convertible in the usual way, that is, a pointer is implicitly convertible
+      to a void pointer, and a void pointer can be converted explicitly to any non-void pointer (all subject to not discarding qualifiers).</p>
     <p>(The typical example of a fancy pointer is an &ldquo;offset pointer&rdquo; into shared memory that allows separate processes
       to access the same object in shared memory; the offset pointer stores only an offset, relative to the pointer object&rsquo;s own
       address. This example demonstrates
@@ -173,7 +176,7 @@ p-&gt;~T();                                   // destruction
       The important operation provided by pointer traits is obtaining a pointer to an element: <code>AllocPtrTraits::pointer_to(r)</code>
       produces a pointer, either by computing <code>std::addressof(r)</code> if <code>AllocTraits::pointer == T *</code>, or otherwise
       by a mechanism specified by the fancy pointer class. See below for details. Finally, it is a requirement that <code>AllocTraits::pointer</code>
-      must be dereferencable (producing a value of type <code>AllocTraits::value_type</code>) by providing <code>operator*</code> and <code>operator-&gt;</code>.</p>
+      must be dereferenceable (producing a value of type <code>AllocTraits::value_type</code>) by providing <code>operator*</code> and <code>operator-&gt;</code>.</p>
 
     <h3>The <code>NullablePointer</code> requirements</h3>
 
@@ -183,8 +186,9 @@ p-&gt;~T();                                   // destruction
       and copying and assigning have
       the usual semantics), as well as the existence of a special null value. Specifically, if a type <code>T</code>
       satisfies the <code>NullablePointer</code> requirements, then it must have a distinguished null value, which
-      compares equal only to itself, and value-initialisation of <code>T</code> (i.e. <code>T()</code>) produces
-      the null value. Moreover, much like for the built-in types, it is permissible for default-initialisation of
+      compares equal only to itself, can be tested for by Boolean conversion, and value-initialisation of <code>T</code>
+      (i.e. <code>T()</code>) produces the null value. (Therefore, the following holds: <code>assert(!T())</code>.)
+      Moreover, much like for the built-in types, it is permissible for default-initialisation of
       <code>T</code> not to perform any initialisation.</p>
 
     <p>The fact that <code>AllocTraits::pointer</code> can be any type that satisfies these requirements has
@@ -206,23 +210,31 @@ p-&gt;~T();                                   // destruction
 
     <h3>Fancy pointer summary</h3>
 
-    <p>We write <code>T = AllocTraits::value_type</code> for brevity.</p>
+    <p>We write <code>T = AllocTraits::value_type</code> for brevity, and we assume that <code>T</code> is
+    an unqualified object type.</p>
     <ul>
       <li>The type <code>AllocTraits::pointer</code> meets the <code>NullablePointer</code> requirements (cf. [nullablepointer.requirements]).</li>
       <li>If <code>AllocTraits::pointer</code> is a user-defined class type (and not <code>T *</code>), we say that <code>Alloc</code>
         uses fancy pointers.</li>
       <li>For a glvalue <code>r</code> of type <code>T</code>, we have a &ldquo;fancy address-of operator&rdquo;:
         <code>AllocTraits::pointer ptr = AllocPtrTraits::pointer_to(r);</code></li>
-      <li>For a fancy pointer <code>AllocTraits::pointer ptr</code>, we have a &ldquo;fancy dereference operator&rdquo;: <code>T &amp; r = *ptr;</code></li>
+      <li>For a dereferenceable fancy pointer <code>AllocTraits::pointer ptr</code>, we have a &ldquo;fancy dereference operator&rdquo;: <code>T &amp; r = *ptr;</code></li>
       <li>We can obtain the &ldquo;true address&rdquo;, i.e. the address of the object obtained by dereferencing a fancy pointer, by the following operation:<br><br>
         <div class="code">template &lt;typename FancyPtr&gt;
           auto trueaddress(FancyPtr ptr)
           {
-          &nbsp;&nbsp;return std::addressof(*ptr);
-          }</div></li>
+          &nbsp;&nbsp;&nbsp;&nbsp;return !ptr ? nullptr : std::addressof(*ptr);
+          }</div>
+        <p>This operation is only valid if the pointer is either null or dereferenceable (i.e. it cannot be one-past-the-end).</p></li>
+      <li>There is a related, const-qualified type <code>AllocTraits::const_pointer</code> which can be converted from
+        an <code>AllocTraits::pointer</code> implicitly.</li>
+      <li>There are void types <code>AllocTraits::void_pointer</code> and <code>AllocTraits::const_void_pointer</code> which
+        can be converted from <code>AllocTraits::pointer</code> implicitly, and <code>AllocTraits::const_void_pointer</code>
+        can be converted from <code>AllocTraits::const_pointer</code> and from <code>AllocTraits::void_pointer</code> implicitly.
+        There are corresponding opposite conversions from void to non-void pointers which are explicit.</li>
     </ul>
 
-    <p>Putting it all together, we arrive at a self-consistency identity for pointers:</p>
+    <p>Putting it all together, we arrive at a self-consistency identity for dereferenceable pointers:</p>
     <div class="code">ptr == std::pointer_traits&lt;AllocTraits::pointer&gt;::pointer_to(*trueaddress(ptr))</div>
 
     <h2 id="alloconst">From allocation to construction</h2>
@@ -296,7 +308,7 @@ AllocTraits::deallocate(a, ptr, 1);                         // deallocate elemen
       comparison <code>a == b</code> is defined as <code>a == AllocTraits::rebind_alloc&lt;Alloc::value_type&gt;(b)</code>.</p>
     <p>So we can say that the identity of an allocator family lies in the shared state much more than in any one object, and
       if there is no shared state (as is the case with <code>std::allocator&lt;T&gt;</code>), then <em>all</em> allocators obtained by
-      rebinding one allocator are in the same, compatible family. Let us summarize:</p>
+      rebinding one allocator are in the same, compatible family. Let us summarise:</p>
     <ul>
       <li>An allocator type <code>Alloc</code> defines a family of allocator types <code>AllocTraits::rebind_alloc&lt;U&gt;</code>
         for all types <code>U</code>.</li>
@@ -400,7 +412,7 @@ NodeTraits::deallocate(n_a, ptr, 1);                                      // dea
         or to keep its own allocator. Either choice has advantages and disadvantages in the case where the two allocators
         are not equal, and so neither one can deallocate the other one&rsquo;s memory. If the allocator is reassigned, then
         it may be necessary to deallocate the currently held data with the old allocator first, and allocate new memory
-        with the newly assigned allocator, rather than keeping the exisitng memory and just reassigning the element values.
+        with the newly assigned allocator, rather than keeping the existing memory and just reassigning the element values.
         On the other hand, if the allocator is reassigned, move-assignment is efficient, since the entire internal allocation
         can just be moved over to <code>x1</code>. If the allocator is not reassigned, move-assignment would require an actual
         element-by-element copy. The desired policy is chosen by means of the types <code>AllocTraits::propagate_on_container_copy_assignment</code>
@@ -428,10 +440,10 @@ NodeTraits::deallocate(n_a, ptr, 1);                                      // dea
       The standard library provides the following machinery.</p>
     <ol>
       <li>There is yet another trait class template, <code>std::uses_allocator&lt;X, A&gt;</code>, which
-        contains a boolean member constant <code>std::uses_allocator&lt;X, A&gt;::value</code>. For brevity,
+        contains a Boolean member constant <code>std::uses_allocator&lt;X, A&gt;::value</code>. For brevity,
         let us write <code>UsesAlloc&lt;X&gt; = std::uses_allocator&lt;X, Alloc&gt;::value</code> for the value
         of this trait for our allocator class <code>Alloc</code>. Then <code>UsesAlloc&lt;X&gt;</code> is <code>true</code>
-        if either the trait has been thus specialized, or otherwise if <code>X</code> defines a member type
+        if either the trait has been thus specialised, or otherwise if <code>X</code> defines a member type
         <code>X::allocator_type = Alloc</code>. In other words, <code>UsesAlloc&lt;X&gt;</code> tells us whether
         the class <code>X</code> uses the allocator <code>Alloc</code>.</li>
       <li>If <code>UsesAlloc&lt;X&gt;</code> is <code>true</code>, then we assume that either
@@ -445,10 +457,10 @@ NodeTraits::deallocate(n_a, ptr, 1);                                      // dea
         the first form is the recommended, new style, which is unambiguous. Classes whose constructors accept allocators
         in this fashion are sometimes called &ldquo;allocator-extended&rdquo;. (Not every class that has allocator-extended
         constructors actually consumes an allocator. An example is <code>std::tuple</code>, for which the
-        <code>uses_allocator</code> trait is specialized to <code>true</code>, so that allocators may be propagated
+        <code>uses_allocator</code> trait is specialised to <code>true</code>, so that allocators may be propagated
         through tuples of types which themselves require an allocator.)</li>
       <li>Now it gets complicated. We will present only the simplest case, but the standard library provides far more
-        advanced machinary. Suppose both our out vector and our inner linked list type should use an allocator of type
+        advanced machinery. Suppose both our out vector and our inner linked list type should use an allocator of type
         <code>Alloc</code>, and they should use compatible allocators (i.e. their all their allocators should compare
         equal). Suppose further we already have an allocator <code>Alloc a</code>, and that both our vector and our
         list class take the new form of constructor. Then we use a new allocator:<br><br>
@@ -461,7 +473,7 @@ NodeTraits::deallocate(n_a, ptr, 1);                                      // dea
           VecType v(std::allocator_arg, a);</div>
         <br>When the vector calls <code>std::allocator_traits&lt;...&gt;::construct(get_allocator(), p, arg1, arg2, arg2)</code>,
         this calls <code>get_allocator().construct(p, arg1, arg2, arg2)</code> on the scoped allocator adaptor. The adaptor
-        in turn recognizes that <code>*p</code> has the <code>uses_allocator</code> trait, and thus it forwards the
+        in turn recognises that <code>*p</code> has the <code>uses_allocator</code> trait, and thus it forwards the
         call to <code>std::allocator_traits&lt;AllocTraits::rebind_alloc&lt;ListType&gt;&gt;::construct(outer_allocator(),
         std::allocator_arg, *this, arg1, arg2, arg3)</code>. In this fashion, the allocator is always rebound-copied into
         the constructors of the element values, as long as those have the <code>uses_allocator</code> trait set.
@@ -489,7 +501,7 @@ NodeTraits::deallocate(n_a, ptr, 1);                                      // dea
       should any invocations of the (de)allocation functions <code>::operator new</code> and <code>::operator
       delete</code>. Moreover, neither global nor per-class overloads for those functions should be defined.
       Instead, dynamic allocations should be private to the implementation of classes, and library authors
-      should allow their classes to be parametrized with allocators. If a class or class template can be
+      should allow their classes to be parametrised with allocators. If a class or class template can be
       used by client classes that may require allocators themselves, the parent allocator should be propagated.
       As a litmus test, it should be possible to instantiate a class in shared memory using fancy offset pointers.</p>
 
