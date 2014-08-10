@@ -159,7 +159,9 @@ p-&gt;~T();                                   // destruction
       &ldquo;const pointer&rdquo; via <code>AllocTraits::const_pointer</code> and &ldquo;void pointers&rdquo; via
       <code>AllocTraits::void_pointer</code> and <code>AllocTraits::const_void_pointer</code>. Pointers are implicitly convertible to
       const pointers. Pointers and void pointers are mutually convertible in the usual way, that is, a pointer is implicitly convertible
-      to a void pointer, and a void pointer can be converted explicitly to any non-void pointer (all subject to not discarding qualifiers).</p>
+      to a void pointer, and a void pointer can be converted explicitly to any non-void pointer (all subject to not discarding qualifiers).
+      However, there is no analogue for <code>const_cast</code>, that is, it is not generally possible to convert a fancy pointer to a
+      less qualified version.</p>
     <p>(The typical example of a fancy pointer is an &ldquo;offset pointer&rdquo; into shared memory that allows separate processes
       to access the same object in shared memory; the offset pointer stores only an offset, relative to the pointer object&rsquo;s own
       address. This example demonstrates
@@ -194,10 +196,10 @@ p-&gt;~T();                                   // destruction
 
     <p>The fact that <code>AllocTraits::pointer</code> can be any type that satisfies these requirements has
       consequences for library authors: It is not generally permissible to attempt to produce a null pointer
-      from an initialiser such as <code>NULL</code>, a literal <code>0</code>, or <code>nullptr</code>. The
+      from an initialiser such as <code>NULL</code> or a literal <code>0</code>. The
       pointer type may not have appropriate constructors, or the constructor overload may be ambiguous, or it
       may not have the desired effect. The only way to produce a null pointer is to value-initialise
-      <code>AllocTraits::pointer</code>.</p>
+      <code>AllocTraits::pointer</code> or to initialize it with an <code>std::nullptr_t</code>.</p>
 
     <p>Moreover, the pointer type may not be trivially constructible. In fact, if it is a class type,
       it <em>cannot</em> be trivially constructible, since the default constructor must initialise its
