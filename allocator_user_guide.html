@@ -494,8 +494,12 @@ NodeTraits::deallocate(n_a, ptr, 1);                                      // dea
       <li>Writing containers: <a href="allocator_example_container.html">A simple dynamic container</a></li>
     </ul>
 
+    <p>The complete code from the examples is available in the <code>example_code</code> subdirectory
+      in <a href="https://github.com/google/cxx-std-draft/tree/allocator-paper">the GitHub repository</a>.</p>
 
-    <h2 id="conclusion">Conclusion</h2>
+
+    <!-- h2 id="conclusion">Conclusion</h2>
+
     <p>[<em>Note. I'm not sure if this belongs here or will stay, but I didn't want to lose it.</em>]</p>
 
     <p>The mechanism to obtain dynamic memory is platform-dependent and opaque. We can make the argument that
@@ -505,7 +509,7 @@ NodeTraits::deallocate(n_a, ptr, 1);                                      // dea
       Instead, dynamic allocations should be private to the implementation of classes, and library authors
       should allow their classes to be parametrised with allocators. If a class or class template can be
       used by client classes that may require allocators themselves, the parent allocator should be propagated.
-      As a litmus test, it should be possible to instantiate a class in shared memory using fancy offset pointers.</p>
+      As a litmus test, it should be possible to instantiate a class in shared memory using fancy offset pointers.</p -->
 
   
 

@@ -15,5 +15,6 @@ Furthermore, there are several worked-out end-to-end examples:
 
 * [Using allocators: A simple arena allocator](https://rawgit.com/google/cxx-std-draft/allocator-paper/allocator_example_usage.html)
 * [Writing containers: A simple dynamic container](https://rawgit.com/google/cxx-std-draft/allocator-paper/allocator_example_usage.html)
+* [Writing fancy pointers: A simple offset pointer](https://rawgit.com/google/cxx-std-draft/allocator-paper/allocator_example_offset_pointer.html)
 
 The code for the end-to-end examples is available separately in the `example_code` directory.
