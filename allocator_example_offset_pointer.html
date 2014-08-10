@@ -1,0 +1,354 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN">
+<html>
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <title>Allocator example: A fancy pointer</title>
+    <link type="text/css" rel="stylesheet" href="allocator_guide.css">
+  </head>
+
+  <body>
+    <div class="docinfo">
+      <!-- p>ISO/IEC JTC1 SC22 WG21 N????</p -->
+      <p>Date: 2014-08-10</p>
+      <address>Thomas K&ouml;ppe &lt;<a href="mailto:tkoeppe@google.com">tkoeppe@google.com</a>&gt;</address>
+    </div>
+
+    <h1>Allocator example: A fancy pointer</h1>
+    <p>Part of the <a href="allocator_user_guide.html">Visitor&rsquo;s Guide to C++ Allocators</a></p>
+
+    <h2>An offset pointer</h2>
+
+    <p>We will design a non-trivial fancy pointer, which can be used as the pointer type of an allocator.
+      The specific example we will develop implements an <em>offset pointer</em>. The idea is for this
+      pointer to store the <em>offset</em> of an object&rsquo;s address and the address of the pointer
+      itself.</p>
+
+    <p>The utility of such a representation lies in the fact that it is to some extent &ldquo;position-independent&rdquo;,
+      and under suitable circumstances, offset pointers may be used to refer to the same object from multiple
+      separate sets of memory, e.g. two distinct memory maps of some common memory, or shared memory viewed
+      from different processes. The extent to which this approach is feasible is platform-dependent, since C++
+      does not have a notion of &ldquo;process&rdquo; or &ldquo;memory mapping&rdquo;, but it is applicable on
+      a wide variety of popular platforms. We will concentrate on the standard-conforming part of the design,
+      though, and only briefly discuss actual use and platform-dependent assumptions.</p>
+
+    <h2>Usage</h2>
+
+    <p>To ground the example in reality, let us jump ahead and consider how we will use the fancy pointer.
+      Suppose we have an allocator <code>A&lt;T&gt;</code> whose pointer type is our fancy pointer. We will
+      want to be able to use this allocator throughout our data structures. As explained in the main guide,
+      we need an allocator adaptor for this purpose:</p>
+    <div class="code">template &lt;typename T&gt; using AA = std::scoped_allocator_adaptor&lt;A&lt;T&gt;&gt;;</div>
+    <p>Now we can build a container:</p>
+    <div class="code strictpre">using astring = std::basic_string&lt;char, std::char_traits&lt;char&gt;, AA&lt;char&gt;&gt;;
+using avector = std::vector&lt;astring, AA&lt;astring&gt;&gt;
+
+std::map&lt;int, avector, std::less&lt;int&gt;, AA&lt;std::pair&lt;int const, avector&gt;&gt;&gt;;</div>
+    <p>If we place one of these maps from integers to vectors of strings into some shared memory and
+      communicate its address to all the participating processes, each process will be able to access
+      and modify the container naturally.</p>
+
+    <h2>Implementation overview</h2>
+
+    <p>The full implementation of the offset pointer is available as <a href="example_code/offptr.hpp">complete
+      source code</a>. There is also a small <a href="example_code/offptr_alloc.hpp">example allocator</a> that
+      uses the fancy pointer. We will only display and discuss selected features of the pointer implementation
+      here.</p>
+
+    <p>We will call our fancy pointer template <code>OffPtr</code>.</p>
+
+    <p>There are three main design issues that we need to consider.</p>
+    <ul>
+      <li>Internal representation</li>
+      <li><code>NullablePointer</code> requirements</li>
+      <li>Random access iterator requirements for object pointer types</li>
+    </ul>
+    <p>The internal representation is the most interesting problem. The other requirements add
+      a fair amount of boilerplate code. It is necessary to meet all the requirements (e.g. so that
+      <code>std::vector</code> can use <code>OffPtr&lt;T&gt;</code> as an iterator. However, we
+      will not spell out all the details of the implementation.</p>
+
+    <h2>Internal representation</h2>
+
+    <h3>Offsets</h3>
+
+    <p>Conceptually, the offset pointer should store the address of an object as the difference
+      between its own address and the object&rsquo;s address. However, pointers are not generally
+      comparable or subtractable in C++, unless they all point to subobjects of a common complete
+      object. But fancy pointers need to be freely copyable (e.g. in order to satisfy the random
+      access iterator requirements), so it must be possible to have temporary objects, which cannot
+      be subobjects of any given object.</p>
+
+    <p>So instead of actual pointers we will use <em>integers</em>. This requires the existence of an
+      integral type with the property that any object pointer can be converted to this integer type
+      and back and produce the same value. Such an integer type is provided optionally by the C++
+      <code>&lt;cstding&gt;</code> library under the name <code>std::uintptr_t</code>. We will only
+      provide our fancy pointer for platforms that provide this integer type.</p>
+
+    <p>The C++ standard makes the following guarantees. As always, let <code>T</code> be an unqualified
+      object type. Then:</p>
+    <ul>
+      <li>Any pointer <code>T * p</code> can be stored in a void pointer: <code>p == static_cast&lt;T *&gt;(static_cast&lt;void *&gt;(p))</code></li>
+      <li>Any void pointer <code>void * q</code> can be stored in a <code>std::uintptr_t</code>:
+        <code>q == reinterpret_cast&lt;void *&gt;(reinterpret_cast&lt;std::uintptr_t&gt;(q))</code></li>
+      <li>The usual arithmetic operations on unsigned integral types are always well defined; addition and
+        subtraction are invertible. That is, for any unsigned <code>a, b</code>, we have <code>a == b + (a - b)</code>
+        etc., there is no undefined or implementation-defined behaviour.</li>
+    </ul>
+
+    <p>Therefore, we choose the following implementation: For any native pointer <code>p</code>, we
+      compute an integral value:</p>
+    <div class="code">n = reinterpret_cast&lt;std::uintptr_t&gt;(static_cast&lt;void *&gt;(p))</div>
+    <p>This value computes equal to the original pointer when converted back. Let us denote this
+      conversion generically by <code>INT(p)</code> and the corresponding reverse conversion by
+      <code>PTR(n)</code>. With this notation, we can write the standard guarantee succinctly as
+      &ldquo;<code>PTR(INT(p)) == p</code> for all object pointers <code>p</code>&rdquo;.</p>
+    <p>The actual offset pointer stores the difference <code>INT(p) - INT(this)</code> for a given
+      native pointer <code>T * p</code>. When we copy or assign offset pointers, the new offset
+      can be obtained as the old offset adjusted by <code>INT(&amp;lhs) - INT(&amp;rhs)</code>.</p>
+
+    <h3>Null pointers</h3>
+
+    <p>One final question is how the null pointer should be represented. There is no one right answer,
+      and using the zero offset will certainly not suffice, since a pointer whose value is its own address
+      is frequently used in container design. It has proven feasible in practice to use a dedicated, special
+      offset value to represent the null pointer. The value <code>std::uintptr_t(-1)</code> usually works well.</p>
+
+    <p>The special treatment of the null pointer offset means that most pointer operations require a conditional
+      check. Implementers may look for platform-specific, low-level optimisations that reduce the costs of the
+      branching. We will not concern ourselves with such details.</p>
+
+    <h3>Void pointers</h3>
+
+    <p>We require a specialisation of the offset pointer for <code>void</code> and <code>const void</code>,
+      which are slightly different, as they do not (and indeed cannot) satisfy the random access iterator
+      requirements. All fancy object pointers need to be convertible to fancy void pointers and const void
+      pointers in the expected fashion.</p>
+
+    <p>To avoid code duplication, we implement the offset logic in a base class, called <code>OffPtrBase</code>.</p>
+
+    <h2><code>NullablePointer</code> and random access iterator requirements</h2>
+
+    <p>For the <code>NullablePointer</code> requirements, we have to provide a default constructor
+      that initialises the offset to the special null pointer value. Note that this means that our
+      fancy pointer can never have a trivial constructor. Container authors should bear this in mind
+      and not make overly restrictive triviality assumptions on the pointer types. Moreover, the
+      fancy pointer has to be constructible and convertible from and comparable with <code>nullptr</code>,
+      and convertible to <code>bool</code>.</p>
+
+    <p>For the random access iterator requirements we have to provide a few type members, most notably
+      the <code>iterator_category</code> member. We must also provide all the relational operators. The
+      relational operators are all implemented in terms of the corresponding operators on the native
+      pointers, so they may in general only be applied to pointers to subobjects of a common complete object.</p>
+
+    <h2>Other requirements, defects and limitations</h2>
+
+    <p>The C++11 standard is somewhat defective regarding the allocator requirements. For instance, it does
+      not answer whether <code>OffPtr&lt;T&gt;</code> and <code>OffPtr&lt;U&gt;</code> should be mutually
+      convertible if <code>T</code> and <code>U</code> are (e.g. base and derived). (The unsafe conversion
+      through <code>OffPtr&lt;void&gt;</code> is not generally correct, since it does not implement derived-to-base
+      conversion.)</p>
+
+    <p>We will equip our fancy pointer with a constructor from <code>OffPtr&lt;U&gt;</code> whenever <code>U *</code>
+      is convertible to <code>T *</code>, as this turns out to be required by implementations of node-based containers.
+      We also take care to provide relational operators not just for a deduced argument <code>OffPtr&lt;T&gt;</code>,
+      but also for non-deduced arguments, so that two different fancy pointer types may be compared. This subsumes
+      comparison with null pointers.</p>
+
+    <h2>Implementation</h2>
+
+    <p>We start with the offset data member and the special null value:</p>
+
+    <div class="code strictpre">template &lt;typename T&gt;
+class OffPtrBase
+{
+protected:
+    std::uintptr_t offset;
+    static std::uintptr_t const null_value = static_cast&lt;std::uintptr_t&gt;(-1);</div>
+
+    <p>Next, we provide a public interface to check for nullness and obtain the native pointer,
+      implemented in terms of a few helper functions for the offset computations. The <code>add_offset</code>
+      helper is only needed to recover the native pointer from <code>this</code> and <code>offset</code>
+      in <code>get()</code>, but writing it as a separate function is cleaner and avoids an explicit conversion
+      to <code>void *</code>. The <code>crement</code> helper is used by the iterator operations; note that
+      it implemented purely in terms of native pointer arithmetic. (We never attempt to express pointer arithmetic
+      via offset arithmetic, which would not have guaranteed semantics under the standard.)</p>
+
+    <div class="code strictpre">    static T * add_offset(void const * p, std::uintptr_t n) noexcept
+    {
+        return static_cast&lt;T *&gt;(reinterpret_cast&lt;void *&gt;(reinterpret_cast&lt;std::uintptr_t&gt;(p) + n));
+    }
+
+    static std::uintptr_t get_offset(void const * from, void const * to) noexcept
+    {
+        return reinterpret_cast&lt;std::uintptr_t&gt;(to) - reinterpret_cast&lt;std::uintptr_t&gt;(from);
+    }
+
+    std::uintptr_t crement(std::ptrdiff_t n) const noexcept
+    {
+        return get_offset(this, get() + n);
+    }
+
+public:
+    bool null() const noexcept
+    {
+        return offset == null_value;
+    }
+
+    T * get() const noexcept
+    {
+        return null() ? nullptr : add_offset(this, offset);
+    }
+
+    explicit operator bool() const noexcept
+    {
+        return !null();
+    }</div>
+
+    <p>Next up are the constructors: Default, from native, from copy, from <code>OffPtr&lt;<em style="font-style:italic">cv</em> T&gt;</code>,
+      and from other offset pointers of compatible types. We don't handle <code>void</code> at this point, which we leave to a conversion
+      operator instead. Note that offsets are always computed from native pointers. We never make assumptions about the <code>meaning</code>
+      of the numeric differences <code>INT(&amp;lhs) - INT(&amp;rhs)</code>.</p>
+
+    <div class="code strictpre">    OffPtrBase() noexcept
+    : offset(null_value)
+    { }
+
+    OffPtrBase(T * native) noexcept
+    : offset(native == nullptr ? null_value : get_offset(this, native))
+    { }
+
+    OffPtrBase(OffPtrBase const &amp; rhs) noexcept
+    : offset(rhs.null() ? null_value : get_offset(this, rhs.get()))
+    { }
+
+
+    // Conversion from unqualified versions
+    template &lt;typename U,
+              typename = typename std::enable_if&lt;!std::is_same&lt;T, U&gt;::value &amp;&amp;
+                                                 std::is_same&lt;typename std::remove_cv&lt;T&gt;::type, U&gt;::value&gt;::type&gt;
+    OffPtrBase(OffPtrBase&lt;U&gt; const &amp; rhs) noexcept
+    : offset(rhs.null() ? null_value : get_offset(this, rhs.get()))
+    { }
+
+    // Conversion from convertible versions
+    template &lt;typename U,
+              typename Dummy = void,
+              typename = typename std::enable_if&lt;!std::is_same&lt;typename std::remove_cv&lt;T&gt;::type, typename std::remove_cv&lt;U&gt;::type&gt;::value &amp;&amp;
+                                                 !std::is_void&lt;U&gt;::value,
+                                                 decltype(static_cast&lt;T *&gt;(std::declval&lt;U *&gt;()))&gt;::type&gt;
+    OffPtrBase(OffPtrBase&lt;U&gt; const &amp; rhs) noexcept
+    : offset(rhs.null() ? null_value : get_offset(this, static_cast&lt;T *&gt;(rhs.get())))
+    { }</div>
+
+    <p>Finally the assignment operator. It needs an overload for <code>std::nullptr_t</code> to avoid ambiguity.</p>
+
+    <div class="code strictpre">    OffPtrBase & operator=(OffPtrBase const &amp; rhs) noexcept
+    {
+        if (this != &amp;rhs)
+        {
+            offset = rhs.null() ? null_value : get_offset(this, rhs.get());
+        }
+        return *this;
+    }
+
+    OffPtrBase & operator=(std::nullptr_t) noexcept
+    {
+        offset = null_value;
+        return *this;
+    }</div>
+
+    <p>With all the offset computations handled in the base class, we can now provide the actual offset pointer
+      class. We need specialisations for the void types, and we start with them, since we will need their definitions
+      in the specialisation for object types. The use of inherited constructors makes the implementation very succinct.</p>
+
+    <div class="code strictpre">template &lt;typename T&gt; struct OffPtr;
+
+template &lt;&gt;
+struct OffPtr&lt;void&gt; : OffPtrBase&lt;void&gt;
+{
+    OffPtr() = default;
+    using OffPtrBase&lt;void&gt;::OffPtrBase;
+    using OffPtrBase&lt;void&gt;::operator=;
+};
+
+template &lt;&gt;
+struct OffPtr&lt;void const&gt; : OffPtrBase&lt;void const&gt;
+{
+    OffPtr() = default;
+    using OffPtrBase&lt;void const&gt;::OffPtrBase;
+    using OffPtrBase&lt;void const&gt;::operator=;
+};</div>
+
+    <p>Now that we have void pointers, we can implement object pointers.</p>
+    <div class="code strictpre">template &lt;typename T&gt;
+struct OffPtr : OffPtrBase&lt;T&gt;
+{
+    OffPtr() = default;
+    using OffPtrBase&lt;T&gt;::OffPtrBase;
+    using OffPtrBase&lt;T&gt;::operator=;
+
+    explicit OffPtr(OffPtr&lt;void&gt; const & rhs) noexcept
+    : OffPtrBase&lt;T&gt;(rhs.null() ? nullptr : static_cast&lt;T *&gt;(rhs.get()))
+    { }
+
+    explicit OffPtr(OffPtr&lt;const void&gt; const & rhs) noexcept
+    : OffPtrBase&lt;T&gt;(rhs.null() ? nullptr : static_cast&lt;T const *&gt;(rhs.get()))
+    { }
+
+    operator OffPtr&lt;void&gt;()       const noexcept { return { this-&gt;get() }; }
+
+    operator OffPtr&lt;void const&gt;() const noexcept { return { this-&gt;get() }; }
+
+    T * operator->() const noexcept { return this->get(); }
+    T & operator*() const noexcept { return *this->get(); }
+    T & operator[](std::size_t i) const noexcept { return this->get()[i]; }</div>
+
+    <p>Here is a small selection of further required interfaces.</p>
+
+    <div class="code strictpre">    // For pointer traits
+    static OffPtr pointer_to(T &amp; x) { return OffPtr(std::addressof(x)); }
+
+    // For random access iterator requirements
+    using iterator_category = std::random_access_iterator_tag;
+
+    OffPtr &amp operator+=(std::ptrdiff_t n)
+    {
+        this->offset = this->crement(n);
+        return *this;
+    }
+
+    // many more
+};
+
+// operator{==, !=, <, <=, >, >=}</div>
+
+    <p>The complete implementation is available as <a href="example_code/offptr.hpp">a separate file</a>.</p>
+
+    <h2>Platform-dependent use: Mapped memory, IPC</h2>
+
+    <p>We have been careful to write our offset pointer entirely in terms of standard-defined behaviour.
+      In doing so we have produced something that is correct but perfectly useless. The true power of the
+      offset pointer lies in its ability to address the same object from within different sets of memories.
+      This is only possible if the numeric pointer values are meaningful as actual sequential addresses in
+      a linear address space. More precisely, we require what we may call a <em>linear addressing condition</em>:</p>
+    <div class="code">p + n == PTR(INT(p) + n * sizeof(*p))</div>
+    <p>Or expressed differently, after subtracting:</p>
+    <div class="code">INT(p + n) - INT(p) == n * sizeof(*p)</div>
+    <p>This condition is satisfied by many popular architectures, at least for all objects within some common
+      &ldquo;segment&rdquo;. This would for example include all native objects on x86-64, or objects located
+      inside the same mapped memory segment in a Posix shared-memory setting.</p>
+    <p>It is sufficient that the linear addressing condition applies to only those fancy pointers and their pointees
+      which are communicated across segment boundaries, such as the data members of an <code>std::vector</code>.
+      By contrast, the condition may clearly be violated by temporary objects created when returning iterators
+      of such vectors, and such temporary objects must therefore not be communicated across segment boundaries.</p>
+    <p>For example, suppose have a map <code>m</code> as in the introduction, which is located in some shared memory.
+      Then we cannot communicate the address of <code>m</code> itself to a different process with our offset pointer.
+      Instead, we need some shared-memory specific mechanism (presumably known to the concrete shared-memory allocator),
+      such as a global shared memory identifier and an offset. The existence of operations that provide this information
+      is as platform-dependent as the linear addressing condition, and presumably equivalent to it. In other words, if
+      a platform offers a shared memory service, then it will probably have some kind of linear addressing that allows
+      two processes to agree on the meaning of an address in the shared memory.</p>
+    <p>There will be a separate end-to-end example on designing a shared memory allocator.</p>
+
+  </body>
+</html>

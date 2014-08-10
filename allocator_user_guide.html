@@ -22,13 +22,14 @@
         2014-07-16: Add links to examples, and examples.
         2014-07-31: Add explanation of NullablePointer requirements
         2014-08-02: Add details on void pointers and dereferenceable pointers and on random access iterators
+        2014-08-10: Add offset pointer example and code
 
   -->
 
   <body>
     <div class="docinfo">
       <!-- p>ISO/IEC JTC1 SC22 WG21 N????</p -->
-      <p>Date: 2014-08-02</p>
+      <p>Date: 2014-08-10</p>
       <address>Thomas K&ouml;ppe &lt;<a href="mailto:tkoeppe@google.com">tkoeppe@google.com</a>&gt;</address>
     </div>
 
@@ -487,7 +488,7 @@ NodeTraits::deallocate(n_a, ptr, 1);                                      // dea
 
     <ul>
       <li>Using allocators: <a href="allocator_example_usage.html">A simple arena allocator</a></li>
-      <li>Writing pointers: A simple offset pointer [to be written]</li>
+      <li>Writing pointers: <a href="allocator_example_offset_pointer.html">A simple offset pointer</a></li>
       <li>Writing allocators: A shared-memory allocator [to be written]</li>
       <li>Writing allocators: A thread-local pool allocator [to be written]</li>
       <li>Writing containers: <a href="allocator_example_container.html">A simple dynamic container</a></li>
