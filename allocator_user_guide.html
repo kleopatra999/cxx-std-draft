@@ -23,13 +23,14 @@
         2014-07-31: Add explanation of NullablePointer requirements
         2014-08-02: Add details on void pointers and dereferenceable pointers and on random access iterators
         2014-08-10: Add offset pointer example and code
+        2014-08-11: Add library issues that affect allocators
 
   -->
 
   <body>
     <div class="docinfo">
       <!-- p>ISO/IEC JTC1 SC22 WG21 N????</p -->
-      <p>Date: 2014-08-10</p>
+      <p>Date: 2014-08-11</p>
       <address>Thomas K&ouml;ppe &lt;<a href="mailto:tkoeppe@google.com">tkoeppe@google.com</a>&gt;</address>
     </div>
 
@@ -51,7 +52,7 @@
       <li><a href="#contreqs">Standard library container requirements</a></li>
       <li><a href="#propagation">Propagating allocators</a></li>
       <li><a href="#examples">Examples</a></li>
-      <li><a href="#conclusion">Conclusion</a></li>
+      <li><a href="#issues">Open issues</a></li>
     </ol>
 
     <h2 id="introduction">Introduction</h2>
@@ -498,6 +499,28 @@ NodeTraits::deallocate(n_a, ptr, 1);                                      // dea
 
     <p>The complete code from the examples is available in the <code>example_code</code> subdirectory
       in <a href="https://github.com/google/cxx-std-draft/tree/allocator-paper">the GitHub repository</a>.</p>
+
+
+    <h2 id="issues">Open issues</h2>
+
+    <p>The specification of allocators in the C++ standard underwent significant changes from C++03 to
+      C++11. As result, the wording that is included in C++11 contains a few points that are vague,
+      unclear or outright impossible to implement. These issues are being addressed by the standardisation
+      committee in library defect reports. Once a defect report is accepted, we consider it part of the
+      language.</p>
+    <p>Here follows a partial list of issues that affect allocators.</p>
+    <ul>
+      <li><a href="http://www.open-std.org/jtc1/sc22/wg21/docs/lwg-active.html#2016">LWG Issue 2016</a>: Exceptions
+        when swapping and move-assigning allocators. The original wording allowed for allocators to throw exceptions
+        when being swapped or move-assigned. This would essentially make it impossible to implement containers. This
+        issue has been accepted; the resolution is to require that move-assigning or swapping not throw exceptions
+        when respectively POCMA or POCS are true.</li>
+      <li><a href="http://www.open-std.org/jtc1/sc22/wg21/docs/lwg-active.html#2260">LWG Issue 2260</a>: Allocator
+        requirements do not require <code>pointer_to</code>. The original wording does not require that the
+        <code>pointer_traits&lt;allocator_traits&lt;A&gt;::pointer&gt;pointer_to</code> function exist. However,
+        it is generally necessary in container design. This issue adds a corresponding requirement to the allocator
+        requirements. The issue is still pending, but seems uncontroversial.</li>
+    </ul>
 
 
     <!-- h2 id="conclusion">Conclusion</h2>
