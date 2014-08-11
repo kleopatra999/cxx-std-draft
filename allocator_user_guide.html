@@ -53,6 +53,7 @@
       <li><a href="#propagation">Propagating allocators</a></li>
       <li><a href="#examples">Examples</a></li>
       <li><a href="#issues">Open issues</a></li>
+      <li><a href="#acknowledgements">Acknowledgements</a></li>
     </ol>
 
     <h2 id="introduction">Introduction</h2>
@@ -434,6 +435,11 @@ NodeTraits::deallocate(n_a, ptr, 1);                                      // dea
     <p>The allocator propagation operations are generally not allowed to throw exceptions. Specifically,
       if POC{CA, MA, S} is true, then {copy-assignment, move-assignment, swap} must not throw exceptions.</p>
 
+    <p>When an allocator is stateless, that is, when any two instances always compare equal, then it should
+      have POCMA be true. Otherwise, containers must perform a dynamic equality check and cannot
+      promise non-throwing moves. (The original <code>std::allocator</code> got this wrong; see the
+      <a href="#issues">issues list</a> below.)</p>
+
     <h3>Deep allocator propagation: the <code>uses_allocator</code> construction</h3>
 
     <p>Suppose we have a vector of linked lists, and the vector uses some allocator of our choice. Even if we
@@ -517,9 +523,15 @@ NodeTraits::deallocate(n_a, ptr, 1);                                      // dea
         when respectively POCMA or POCS are true.</li>
       <li><a href="http://www.open-std.org/jtc1/sc22/wg21/docs/lwg-active.html#2260">LWG Issue 2260</a>: Allocator
         requirements do not require <code>pointer_to</code>. The original wording does not require that the
-        <code>pointer_traits&lt;allocator_traits&lt;A&gt;::pointer&gt;pointer_to</code> function exist. However,
+        <code>pointer_traits&lt;allocator_traits&lt;A&gt;::pointer&gt;::pointer_to</code> function exist. However,
         it is generally necessary in container design. This issue adds a corresponding requirement to the allocator
         requirements. The issue is still pending, but seems uncontroversial.</li>
+      <li><a href="http://www.open-std.org/jtc1/sc22/wg21/docs/lwg-defects.html#2103">LWG Issue 2103</a>: The standard
+        <code>std::allocator</code> should POCMA. In the original wording, <code>std::allocator&lt;T&gt;::propagate_on_container_move_assignment</code> was <code>std::false_type</code>, which meant that container moves could not be <code>noexcept</code>. The accepted resolution is to
+        set POCMA to true for the standard allocator. This issue is accepted for C++14, but implementers have been
+        incorporating the resolution into C++11 libraries since without it common operations would be unacceptably
+        inefficient.
+      </li>
     </ul>
 
 
@@ -537,6 +549,11 @@ NodeTraits::deallocate(n_a, ptr, 1);                                      // dea
       As a litmus test, it should be possible to instantiate a class in shared memory using fancy offset pointers.</p -->
 
   
+    <h2 id="acknowledgements">Acknowledgements</h2>
+
+    <p>This guide has benefited greatly from feedback, suggestions and corrections from the C++ community.
+      In particular, Jonathan Wakely has repeatedly provided valuable insights, and Jens Maurer helped getting
+      the offset pointer example right.</p>
 
 
 <!-- To do:
