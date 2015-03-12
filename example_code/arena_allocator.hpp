@@ -32,16 +32,16 @@ struct ArenaAllocator
         arena->deallocate(p, n * sizeof(T));
     }
 
-    template <typename U, typename V>
-    friend bool operator==(ArenaAllocator<U> const & lhs, ArenaAllocator<V> const & rhs)
+    template <typename U>
+    bool operator==(ArenaAllocator<U> const & rhs) const
     {
-        return lhs.arena == rhs.arena;
+        return arena == rhs.arena;
     }
 
-    template <typename U, typename V>
-    friend bool operator!=(ArenaAllocator<U> const & lhs, ArenaAllocator<V> const & rhs)
+    template <typename U>
+    bool operator!=(ArenaAllocator<U> const & rhs) const
     {
-        return lhs.arena != rhs.arena;
+        return arena != rhs.arena;
     }
 
 private:

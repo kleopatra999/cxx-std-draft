@@ -122,14 +122,14 @@ struct ArenaAllocator
         arena-&gt;deallocate(p, n * sizeof(T));
     }
 
-    template &lt;typename U, typename V&gt;
-    friend bool operator==(ArenaAllocator&lt;U&gt; const & lhs, ArenaAllocator&lt;V&gt; const & rhs)
+    template &lt;typename U&gt;
+    bool operator==(ArenaAllocator&lt;U&gt; const &amp; rhs) const
     {
         return lhs.arena == rhs.arena;
     }
 
-    template &lt;typename U, typename V&gt;
-    friend bool operator!=(ArenaAllocator&lt;U&gt; const & lhs, ArenaAllocator&lt;V&gt; const & rhs)
+    template &lt;typename U&gt;
+    bool operator!=(ArenaAllocator&lt;U&gt; const &amp; rhs) const
     {
         return lhs.arena != rhs.arena;
     }
