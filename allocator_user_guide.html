@@ -192,19 +192,17 @@ p-&gt;~T();                                   // destruction
       the usual semantics), as well as the existence of a special null value. Specifically, if a type <code>T</code>
       satisfies the <code>NullablePointer</code> requirements, then it must have a distinguished null value, which
       compares equal only to itself, can be tested for by Boolean conversion, and value-initialisation of <code>T</code>
-      (i.e. <code>T()</code>) produces the null value. (Therefore, the following holds: <code>assert(!T())</code>.)
-      Moreover, much like for the built-in types, it is permissible for default-initialisation of
-      <code>T</code> not to perform any initialisation.</p>
+      (i.e. <code>T()</code>) produces the null value. (Therefore, the following holds: <code>assert(!T())</code>.)</p>
 
     <p>The fact that <code>AllocTraits::pointer</code> can be any type that satisfies these requirements has
       consequences for library authors: It is not generally permissible to attempt to produce a null pointer
       from an initialiser such as <code>NULL</code> or a literal <code>0</code>. The
       pointer type may not have appropriate constructors, or the constructor overload may be ambiguous, or it
-      may not have the desired effect. The only way to produce a null pointer is to value-initialise
-      <code>AllocTraits::pointer</code> or to initialize it with an <code>std::nullptr_t</code>.</p>
+      may not have the desired effect. The only way to produce a null value of type <code>AllocTraits::pointer</code>
+      is to value-initialise it or to initialize it with a value of type <code>std::nullptr_t</code>.</p>
 
-    <p>Moreover, the pointer type may not be trivially constructible. In fact, if it is a class type,
-      it <em>cannot</em> be trivially constructible, since the default constructor must initialise its
+    <p>Moreover, note that if the pointer type is a class type, then it cannot be trivially constructible, since the
+      default constructor must initialise its
       state to the null value. Therefore, common &ldquo;small-container&rdquo; optimisations that
       represent the container class members as a union of a set of pointers and raw storage need be
       careful to provide the union with appropriate constructors.</p>
