@@ -24,13 +24,14 @@
         2014-08-02: Add details on void pointers and dereferenceable pointers and on random access iterators
         2014-08-10: Add offset pointer example and code
         2014-08-11: Add library issues that affect allocators
+        2015-04-27: Fix explanation of NullablePointer regarding trivial constructibility
 
   -->
 
   <body>
     <div class="docinfo">
       <!-- p>ISO/IEC JTC1 SC22 WG21 N????</p -->
-      <p>Date: 2014-08-11</p>
+      <p>Date: 2015-04-27</p>
       <address>Thomas K&ouml;ppe &lt;<a href="mailto:tkoeppe@google.com">tkoeppe@google.com</a>&gt;</address>
     </div>
 
@@ -201,9 +202,8 @@ p-&gt;~T();                                   // destruction
       may not have the desired effect. The only way to produce a null value of type <code>AllocTraits::pointer</code>
       is to value-initialise it or to initialize it with a value of type <code>std::nullptr_t</code>.</p>
 
-    <p>Moreover, note that if the pointer type is a class type, then it cannot be trivially constructible, since the
-      default constructor must initialise its
-      state to the null value. Therefore, common &ldquo;small-container&rdquo; optimisations that
+    <p>Moreover, note that if the pointer type is a class type, then it may not be trivially constructible, since the
+      default constructor may be required to initialise its state to the null value. Therefore, common &ldquo;small-container&rdquo; optimisations that
       represent the container class members as a union of a set of pointers and raw storage need be
       careful to provide the union with appropriate constructors.</p>
 
@@ -337,7 +337,7 @@ AllocTraits::deallocate(a, ptr, 1);                         // deallocate elemen
 
     <p>This example is worth spelling out in detail. Suppose we have elements of type <code>T</code>, list nodes of type
       <code>Node&lt;T&gt;</code>, and an allocator <code>a</code> for <code>T</code> of type <code>Alloc</code>. We have to design
-      <code>Node&lt;T&gt;</code> so that it is trivially constructable and contains storage for <code>T</code>; for example:</p>
+      <code>Node&lt;T&gt;</code> so that it is trivially constructible and contains storage for <code>T</code>; for example:</p>
     <div class="code">template &lt;typename T&gt; struct Node {
       &nbsp;&nbsp;Node * prev;
       &nbsp;&nbsp;Node * next;
